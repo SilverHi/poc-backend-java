@@ -24,7 +24,6 @@ public class WorkflowController {
         result.put("module", "workflow");
         result.put("status", "running");
         result.put("description", "工作流模块运行正常");
-        
         log.info("Workflow status requested");
         return result;
     }
@@ -34,7 +33,6 @@ public class WorkflowController {
         Map<String, Object> result = new HashMap<>();
         result.put("workflows", new String[]{"审批流程", "数据处理流程", "通知流程"});
         result.put("count", 3);
-        
         return result;
     }
 } 

@@ -10,7 +10,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  */
 @SpringBootApplication(scanBasePackages = {
     "cn.iocoder.boot.server",
-    "cn.iocoder.boot.workflow"
+    "cn.iocoder.boot.workflow",
+    "cn.iocoder.boot.interaction"
 })
 public class BackendServerApplication {
 
