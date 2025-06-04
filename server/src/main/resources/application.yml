@@ -1,0 +1,41 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: backend-server
+  
+  # 数据源配置
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://8.138.90.155:5432/ai
+    username: ai
+    password: ai
+    
+  # Spring AI配置
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:your-api-key-here}
+      base-url: ${OPENAI_BASE_URL:https://api.openai.com}
+      chat:
+        options:
+          model: gpt-3.5-turbo
+          temperature: 0.7
+
+# 日志配置
+logging:
+  level:
+    cn.iocoder.boot: debug
+    org.springframework: info
+  pattern:
+    console: '%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'
+
+# 管理端点配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized 

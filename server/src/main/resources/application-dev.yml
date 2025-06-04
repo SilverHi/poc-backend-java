@@ -1,0 +1,27 @@
+# 开发环境配置
+server:
+  port: 8080
+
+spring:
+  # 数据源配置
+  datasource:
+    url: jdbc:postgresql://8.138.90.155:5432/ai
+    username: ai
+    password: ai
+    
+  # 开发时显示SQL
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+
+# 日志配置
+logging:
+  level:
+    cn.iocoder.boot: debug
+    org.springframework.web: debug
+    org.hibernate.SQL: debug
+    org.hibernate.type.descriptor.sql.BasicBinder: trace 
