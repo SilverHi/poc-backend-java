@@ -1,5 +1,21 @@
 HELP.md
 target/
+/target/
+/.DS_Store
+/.idea/
+/.vscode/
+/.mvn/
+/.gradle/
+/.settings/
+/.project/
+/.classpath/
+/.env
+/.env.local
+/.env.development.local
+/.env.test.local
+/.env.production.local
+/.env.development
+/.env.test
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
@@ -28,6 +44,10 @@ target/
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
-
+!**/node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/dist/
 ### VS Code ###
 .vscode/

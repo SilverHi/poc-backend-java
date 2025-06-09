@@ -1,0 +1,68 @@
+/* 自定义 Tailwind 工具类 */
+
+/* 与 Ant Design 兼容的布局类 */
+.flex-center {
+  @apply flex items-center justify-center;
+}
+
+.flex-between {
+  @apply flex items-center justify-between;
+}
+
+.card-shadow {
+  @apply shadow-md hover:shadow-lg transition-shadow duration-200;
+}
+
+/* 渐变背景 */
+.gradient-bg-primary {
+  @apply bg-gradient-to-r from-blue-500 to-blue-600;
+}
+
+.gradient-bg-secondary {
+  @apply bg-gradient-to-r from-gray-100 to-gray-200;
+}
+
+/* 动画效果 */
+.slide-in {
+  @apply transform transition-transform duration-300 ease-out;
+}
+
+.slide-in:hover {
+  @apply -translate-y-1;
+}
+
+/* 响应式间距 */
+.container-padding {
+  @apply px-4 md:px-6 lg:px-8;
+}
+
+/* 文本样式 */
+.text-gradient {
+  @apply bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent;
+}
+
+/* 自定义组件样式 */
+.chat-bubble {
+  @apply rounded-lg px-4 py-2 max-w-xs lg:max-w-md;
+}
+
+.chat-bubble-user {
+  @apply bg-blue-500 text-white ml-auto;
+}
+
+.chat-bubble-assistant {
+  @apply bg-gray-100 text-gray-800 mr-auto;
+}
+
+/* 侧边栏样式 */
+.sidebar-item {
+  @apply flex items-center p-3 rounded-lg cursor-pointer transition-colors duration-200;
+}
+
+.sidebar-item:hover {
+  @apply bg-blue-50 text-blue-600;
+}
+
+.sidebar-item.active {
+  @apply bg-blue-100 text-blue-700 font-medium;
+} 
