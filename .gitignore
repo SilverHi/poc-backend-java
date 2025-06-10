@@ -51,3 +51,4 @@ frontend/build/
 frontend/dist/
 ### VS Code ###
 .vscode/
+frontend/src/openaicall/localConfig.ts

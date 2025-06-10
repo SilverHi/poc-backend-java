@@ -1,5 +1,6 @@
 package cn.iocoder.boot.server;
 
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -11,7 +12,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication(scanBasePackages = {
     "cn.iocoder.boot.server",
     "cn.iocoder.boot.workflow",
-    "cn.iocoder.boot.interaction"
+    "cn.iocoder.boot.chatbycard"
+})
+@MapperScan(basePackages = {
+    "cn.iocoder.boot.server.mapper",
+    "cn.iocoder.boot.workflow.mapper",
+    "cn.iocoder.boot.chatbycard.mapper"
 })
 public class BackendServerApplication {
 

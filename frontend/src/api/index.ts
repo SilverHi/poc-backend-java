@@ -29,7 +29,7 @@ import {
 // API配置
 const API_CONFIG = {
   BASE_URL: 'http://localhost:8080',
-  USE_MOCK: true, // 开发时使用mock，生产时改为false
+  USE_MOCK: false, // 改为使用真实后端API
   TIMEOUT: 10000,
 };
 
@@ -64,37 +64,101 @@ const httpRequest = async <T>(
   }
 };
 
+// 工具函数：转换后端文档数据为前端格式
+const convertBackendDocumentToFrontend = (doc: any, includeContent: boolean = false): Document => {
+  return {
+    id: doc.id.toString(),
+    name: doc.documentName,
+    type: doc.documentType as 'txt',
+    content: includeContent ? (doc.content || '') : '',
+    preview: doc.preview || '暂无预览',
+    size: doc.fileSizeFormatted || '0 B',
+    uploadTime: doc.uploadTime ? new Date(doc.uploadTime).toISOString().split('T')[0] : '',
+    status: 'ready' as const
+  };
+};
+
 // ==================== 真实API实现 ====================
 
 /**
  * 获取所有文档 - 真实API
  */
 const realGetDocuments = async (): Promise<ApiResponse<Document[]>> => {
-  return httpRequest<Document[]>('/api/documents');
+  const result = await httpRequest<any>('/api/chatbycard/documents');
+  if (result.success && result.data && result.data.data && result.data.data.data) {
+    // 转换后端数据格式为前端期望的格式（列表不包含内容）
+    const documents: Document[] = result.data.data.data.map((doc: any) => 
+      convertBackendDocumentToFrontend(doc, false)
+    );
+    
+    return {
+      success: true,
+      data: documents,
+    };
+  }
+  return {
+    success: false,
+    error: result.error || '获取文档列表失败'
+  };
 };
 
 /**
  * 根据ID获取文档 - 真实API
  */
 const realGetDocumentById = async (id: string): Promise<ApiResponse<Document | null>> => {
-  return httpRequest<Document>(`/api/documents/${id}`);
+  const result = await httpRequest<any>(`/api/chatbycard/documents/${id}`);
+  if (result.success && result.data && result.data.data && result.data.data.data) {
+    const document = convertBackendDocumentToFrontend(result.data.data.data, true);
+    
+    return {
+      success: true,
+      data: document,
+    };
+  }
+  return {
+    success: false,
+    error: result.error || '获取文档详情失败',
+    data: null
+  };
 };
 
 /**
  * 根据IDs获取多个文档 - 真实API
  */
 const realGetDocumentsByIds = async (ids: string[]): Promise<ApiResponse<Document[]>> => {
-  return httpRequest<Document[]>('/api/documents/batch', {
-    method: 'POST',
-    body: JSON.stringify({ ids }),
-  });
+  // 由于后端目前没有批量获取接口，我们逐个获取
+  const documents: Document[] = [];
+  for (const id of ids) {
+    const result = await realGetDocumentById(id);
+    if (result.success && result.data) {
+      documents.push(result.data);
+    }
+  }
+  return {
+    success: true,
+    data: documents,
+  };
 };
 
 /**
  * 搜索文档 - 真实API
  */
 const realSearchDocuments = async (query: string): Promise<ApiResponse<Document[]>> => {
-  return httpRequest<Document[]>(`/api/documents/search?q=${encodeURIComponent(query)}`);
+  const result = await httpRequest<any>(`/api/chatbycard/documents?keyword=${encodeURIComponent(query)}`);
+  if (result.success && result.data && result.data.data && result.data.data.data) {
+    const documents: Document[] = result.data.data.data.map((doc: any) => 
+      convertBackendDocumentToFrontend(doc, false)
+    );
+    
+    return {
+      success: true,
+      data: documents,
+    };
+  }
+  return {
+    success: false,
+    error: result.error || '搜索文档失败'
+  };
 };
 
 /**
@@ -105,7 +169,7 @@ const realUploadDocument = async (file: File): Promise<DocumentUploadResponse> =
   formData.append('file', file);
   
   try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}/api/documents/upload`, {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/chatbycard/documents/upload`, {
       method: 'POST',
       body: formData,
     });
@@ -115,7 +179,20 @@ const realUploadDocument = async (file: File): Promise<DocumentUploadResponse> =
     }
 
     const result = await response.json();
-    return result;
+    
+    if (result.success && result.document) {
+      const document = convertBackendDocumentToFrontend(result.document, true);
+      
+      return {
+        success: true,
+        document
+      };
+    }
+    
+    return {
+      success: false,
+      error: result.message || '上传失败'
+    };
   } catch (error) {
     return {
       success: false,
@@ -128,25 +205,31 @@ const realUploadDocument = async (file: File): Promise<DocumentUploadResponse> =
  * 删除文档 - 真实API
  */
 const realDeleteDocument = async (id: string): Promise<ApiResponse<boolean>> => {
-  return httpRequest<boolean>(`/api/documents/${id}`, {
+  const result = await httpRequest<any>(`/api/chatbycard/documents/${id}`, {
     method: 'DELETE',
   });
+  
+  return {
+    success: result.success,
+    data: result.success,
+    error: result.error
+  };
 };
 
 /**
  * 获取文档内容 - 真实API
  */
 const realGetDocumentContent = async (id: string): Promise<ApiResponse<string | null>> => {
-  const result = await httpRequest<{ content: string }>(`/api/documents/${id}/content`);
-  if (result.success && result.data) {
+  const result = await httpRequest<any>(`/api/chatbycard/documents/${id}/content`);
+  if (result.success && result.data && result.data.data && result.data.data.data) {
     return {
       success: true,
-      data: result.data.content,
+      data: result.data.data.data,
     };
   }
   return {
-    success: result.success,
-    error: result.error,
+    success: false,
+    error: result.error || '获取文档内容失败',
     data: null,
   };
 };
@@ -155,10 +238,20 @@ const realGetDocumentContent = async (id: string): Promise<ApiResponse<string | 
  * 批量获取文档内容 - 真实API
  */
 const realGetDocumentsContent = async (ids: string[]): Promise<ApiResponse<Record<string, string>>> => {
-  return httpRequest<Record<string, string>>('/api/documents/content/batch', {
-    method: 'POST',
-    body: JSON.stringify({ ids }),
-  });
+  // 由于后端目前没有批量获取内容接口，我们逐个获取
+  const contentMap: Record<string, string> = {};
+  
+  for (const id of ids) {
+    const result = await realGetDocumentContent(id);
+    if (result.success && result.data) {
+      contentMap[id] = result.data;
+    }
+  }
+  
+  return {
+    success: true,
+    data: contentMap,
+  };
 };
 
 // ==================== 统一API接口（自动切换mock/real）====================
@@ -244,11 +337,103 @@ export const setApiBaseUrl = (baseUrl: string) => {
 
 // ==================== Agents相关API ====================
 
+// 工具函数：转换后端代理数据为前端格式
+const convertBackendAgentToFrontend = (agent: any): Agent => {
+  return {
+    id: agent.id.toString(),
+    name: agent.name,
+    type: agent.type,
+    icon: agent.icon,
+    description: agent.description,
+    model: agent.modelName,
+    capability: [], // 后端暂时没有capability字段，设为空数组
+    category: 'agent' as const,
+    callCount: agent.callCount || 0
+  };
+};
+
+/**
+ * 获取所有Agents - 真实API
+ */
+const realGetAgents = async (): Promise<ApiResponse<Agent[]>> => {
+  const result = await httpRequest<any>('/api/chatbycard/agents');
+  if (result.success && result.data && result.data.data && result.data.data.data) {
+    const agents: Agent[] = result.data.data.data.map((agent: any) => 
+      convertBackendAgentToFrontend(agent)
+    );
+    
+    return {
+      success: true,
+      data: agents,
+    };
+  }
+  return {
+    success: false,
+    error: result.error || '获取代理列表失败'
+  };
+};
+
+/**
+ * 根据ID获取Agent - 真实API
+ */
+const realGetAgentById = async (id: string): Promise<ApiResponse<Agent | null>> => {
+  const result = await httpRequest<any>(`/api/chatbycard/agents/${id}`);
+  if (result.success && result.data && result.data.data && result.data.data.data) {
+    const agent = convertBackendAgentToFrontend(result.data.data.data);
+    
+    return {
+      success: true,
+      data: agent,
+    };
+  }
+  return {
+    success: false,
+    error: result.error || '获取代理详情失败',
+    data: null
+  };
+};
+
+/**
+ * 搜索Agents - 真实API
+ */
+const realSearchAgents = async (query: string): Promise<ApiResponse<Agent[]>> => {
+  const result = await httpRequest<any>(`/api/chatbycard/agents?keyword=${encodeURIComponent(query)}`);
+  if (result.success && result.data && result.data.data && result.data.data.data) {
+    const agents: Agent[] = result.data.data.data.map((agent: any) => 
+      convertBackendAgentToFrontend(agent)
+    );
+    
+    return {
+      success: true,
+      data: agents,
+    };
+  }
+  return {
+    success: false,
+    error: result.error || '搜索代理失败'
+  };
+};
+
+/**
+ * 增加代理调用次数 - 真实API
+ */
+const realIncrementAgentCallCount = async (id: string): Promise<ApiResponse<boolean>> => {
+  const result = await httpRequest<any>(`/api/chatbycard/agents/${id}/increment-call`, {
+    method: 'POST',
+  });
+  
+  return {
+    success: result.success,
+    data: result.success,
+    error: result.error
+  };
+};
+
 /**
  * 获取所有Agents
  */
 export const getAgents = async (): Promise<ApiResponse<Agent[]>> => {
-  return API_CONFIG.USE_MOCK ? mockGetAgents() : httpRequest<Agent[]>('/api/agents');
+  return API_CONFIG.USE_MOCK ? mockGetAgents() : realGetAgents();
 };
 
 /**
@@ -269,7 +454,7 @@ export const getTools = async (): Promise<ApiResponse<Tool[]>> => {
  * 根据ID获取Agent
  */
 export const getAgentById = async (id: string): Promise<ApiResponse<Agent | null>> => {
-  return API_CONFIG.USE_MOCK ? mockGetAgentById(id) : httpRequest<Agent>(`/api/agents/${id}`);
+  return API_CONFIG.USE_MOCK ? mockGetAgentById(id) : realGetAgentById(id);
 };
 
 /**
@@ -290,7 +475,14 @@ export const getToolById = async (id: string): Promise<ApiResponse<Tool | null>>
  * 搜索Agents
  */
 export const searchAgents = async (query: string): Promise<ApiResponse<Agent[]>> => {
-  return API_CONFIG.USE_MOCK ? mockSearchAgents(query) : httpRequest<Agent[]>(`/api/agents/search?q=${encodeURIComponent(query)}`);
+  return API_CONFIG.USE_MOCK ? mockSearchAgents(query) : realSearchAgents(query);
+};
+
+/**
+ * 增加代理调用次数
+ */
+export const incrementAgentCallCount = async (id: string): Promise<ApiResponse<boolean>> => {
+  return API_CONFIG.USE_MOCK ? { success: true, data: true } : realIncrementAgentCallCount(id);
 };
 
 /**

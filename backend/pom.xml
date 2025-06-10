@@ -12,7 +12,7 @@
     
     <properties>
         <java.version>17</java.version>
-        <spring-boot.version>3.5.0</spring-boot.version>
+        <spring-boot.version>3.2.5</spring-boot.version>
         <spring-ai.version>1.0.0-M6</spring-ai.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
@@ -22,10 +22,12 @@
     <!-- 子模块列表 -->
     <modules>
         <module>workflow</module>
-        <module>interaction</module>
+        <module>chatbycard</module>
         <module>server</module>
         <!-- 后续添加更多子模块时在这里添加 -->
     </modules>
+
+
 
     <!-- 依赖管理 - 统一管理版本 -->
     <dependencyManagement>
@@ -44,6 +46,18 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- MyBatis-Plus Spring Boot 3版本管理 -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+                <version>3.5.9</version>
+            </dependency>
+            <!-- MyBatis-Plus JSQLParser for JDK 11+ -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-jsqlparser</artifactId>
+                <version>3.5.9</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -58,6 +72,7 @@
                     <configuration>
                         <source>${java.version}</source>
                         <target>${java.version}</target>
+                        <parameters>true</parameters>
                         <annotationProcessorPaths>
                             <path>
                                 <groupId>org.projectlombok</groupId>

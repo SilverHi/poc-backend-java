@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Input, Button, Typography, Card, Tag, Space } from 'antd';
+import { Input, Button, Typography, Card, Tag, Space, message } from 'antd';
 import { SendOutlined, PaperClipOutlined, AudioOutlined, CloseOutlined, FileTextOutlined, ToolOutlined } from '@ant-design/icons';
 import MessageCard from './MessageCard';
 import StepCard from './StepCard';
+
+import { getDocumentsContent, incrementAgentCallCount } from '../../../../api';
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -41,6 +43,10 @@ interface SelectedAgent {
   name: string;
   type: 'workflow' | 'tool';
   description?: string;
+  systemPrompt?: string;
+  modelName?: string;
+  temperature?: number;
+  maxTokens?: number;
 }
 
 interface ChatAreaProps {
@@ -73,7 +79,14 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return;
+    // 检查是否有内容可以发送：用户输入或引用的文档
+    if ((!inputValue.trim() && referencedDocuments.length === 0) || isLoading) return;
+
+    // 检查API Key是否已配置
+    if (!isApiKeyConfigured()) {
+      message.error('OpenAI API Key未配置，请在 src/openaicall/localConfig.ts 中设置您的API Key');
+      return;
+    }
 
     // 创建用户消息
     const userMessage: ChatMessage = {
@@ -91,58 +104,157 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     setIsLoading(true);
     setProcessSteps([]);
 
-    // 模拟处理步骤
-    setTimeout(() => {
-      setProcessSteps([
-        {
-          id: 'step1',
-          content: 'Agent开始处理...',
-          status: 'processing',
-          timestamp: new Date()
-        }
-      ]);
-    }, 500);
+    try {
+      // 步骤1: 开始处理
+      setProcessSteps([{
+        id: 'step1',
+        content: selectedAgent ? `正在使用 ${selectedAgent.name} 处理...` : '开始处理请求...',
+        status: 'processing',
+        timestamp: new Date()
+      }]);
 
-    setTimeout(() => {
-      setProcessSteps(prev => [
-        ...prev,
-        {
+      // 步骤2: 准备文档内容 (如果有引用文档)
+      let documentsWithContent: Array<{id: string, name: string, content: string}> = [];
+      if (referencedDocuments.length > 0) {
+        setProcessSteps(prev => [...prev, {
           id: 'step2',
-          content: '正在解析文档内容...',
+          content: '正在获取引用文档内容...',
           status: 'processing',
           timestamp: new Date()
-        }
-      ]);
-    }, 1000);
+        }]);
 
-    setTimeout(() => {
-      setProcessSteps(prev => [
-        ...prev,
-        {
+        const documentIds = referencedDocuments.map(doc => doc.id);
+        const documentsContentResponse = await getDocumentsContent(documentIds);
+        
+        if (documentsContentResponse.success && documentsContentResponse.data) {
+          documentsWithContent = referencedDocuments.map(doc => ({
+            id: doc.id,
+            name: doc.name,
+            content: documentsContentResponse.data![doc.id] || '无法获取文档内容'
+          }));
+        }
+      }
+
+      // 步骤3: 准备Agent信息 (如果选择了Agent)
+      let agentInfo = selectedAgent;
+      if (selectedAgent && selectedAgent.id) {
+        setProcessSteps(prev => [...prev, {
           id: 'step3',
-          content: '分析代码结构...',
+          content: `正在加载 ${selectedAgent.name} 的配置...`,
           status: 'processing',
           timestamp: new Date()
-        }
-      ]);
-    }, 1500);
+        }]);
 
-    // 模拟AI回复
-    setTimeout(() => {
-      const aiResponse = `这是对"${userMessage.userInput}"的回复。在实际应用中，这里会连接到真正的AI API来生成智能回复。目前这只是一个演示界面，展示了OpenAI风格的对话体验。`;
+        // 获取完整的Agent信息 - 直接调用后端API获取完整数据
+        try {
+          const response = await fetch(`http://localhost:8080/api/chatbycard/agents/${selectedAgent.id}`);
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data && result.data.data) {
+              const backendAgent = result.data.data;
+              agentInfo = {
+                ...selectedAgent,
+                systemPrompt: backendAgent.systemPrompt || '',
+                modelName: backendAgent.modelName || 'gpt-4o-mini',
+                temperature: backendAgent.temperature,
+                maxTokens: backendAgent.maxTokens
+              };
+            }
+          }
+        } catch (error) {
+          console.warn('获取Agent信息失败:', error);
+        }
+      }
+
+      // 步骤4: 调用OpenAI
+      setProcessSteps(prev => [...prev, {
+        id: 'step4',
+        content: '正在调用OpenAI API...',
+        status: 'processing',
+        timestamp: new Date()
+      }]);
+
+      // 构建调用参数
+      const callParams: ChatCallParams = {
+        userInput: inputValue,
+        referencedDocuments: documentsWithContent,
+        selectedAgent: agentInfo ? {
+          id: agentInfo.id,
+          name: agentInfo.name,
+          systemPrompt: agentInfo.systemPrompt || '',
+          modelName: agentInfo.modelName || 'gpt-4o-mini',
+          temperature: agentInfo.temperature,
+          maxTokens: agentInfo.maxTokens
+        } : undefined
+      };
+
+      // 调用OpenAI API
+      const openaiResponse = await callOpenAI(callParams);
+
+      if (openaiResponse.success && openaiResponse.content) {
+        // 如果使用了Agent，增加调用次数
+        if (agentInfo && agentInfo.id) {
+          await incrementAgentCallCount(agentInfo.id);
+        }
+
+        // 更新处理步骤为完成状态
+        setProcessSteps(prev => prev.map(step => ({
+          ...step,
+          status: 'completed' as const
+        })));
+
+        // 创建AI回复消息
+        const assistantReply: ChatMessage = {
+          id: (Date.now() + 2).toString(),
+          type: 'assistant',
+          aiResponse: openaiResponse.content,
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, assistantReply]);
+        setLastAiResponse(openaiResponse.content);
+      } else {
+        // 处理错误
+        setProcessSteps(prev => [...prev, {
+          id: 'error',
+          content: `调用失败: ${openaiResponse.error || '未知错误'}`,
+          status: 'completed',
+          timestamp: new Date()
+        }]);
+
+        // 创建错误回复
+        const errorReply: ChatMessage = {
+          id: (Date.now() + 2).toString(),
+          type: 'assistant',
+          aiResponse: `抱歉，处理您的请求时发生了错误：${openaiResponse.error || '未知错误'}`,
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, errorReply]);
+      }
+    } catch (error) {
+      console.error('处理消息时发生错误:', error);
       
-      const assistantReply: ChatMessage = {
+      // 更新错误步骤
+      setProcessSteps(prev => [...prev, {
+        id: 'error',
+        content: `处理失败: ${error instanceof Error ? error.message : '未知错误'}`,
+        status: 'completed',
+        timestamp: new Date()
+      }]);
+
+      // 创建错误回复
+      const errorReply: ChatMessage = {
         id: (Date.now() + 2).toString(),
         type: 'assistant',
-        aiResponse,
+        aiResponse: `抱歉，处理您的请求时发生了错误：${error instanceof Error ? error.message : '未知错误'}`,
         timestamp: new Date()
       };
       
-      setMessages(prev => [...prev, assistantReply]);
-      setLastAiResponse(aiResponse);
+      setMessages(prev => [...prev, errorReply]);
+    } finally {
       setIsLoading(false);
-      // 保留步骤显示，不清空
-    }, 3000);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -342,7 +454,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                       ? `使用 ${selectedAgent.name} 发送消息...`
                       : referencedDocuments.length > 0
                         ? "基于选择的文档提问..."
-                        : "发送消息给ChatGPT..."
+                        : "发送消息给ChatbyCard..."
                   }
                   autoSize={{ minRows: 1, maxRows: 6 }}
                   className="border-0 resize-none focus:shadow-none"
@@ -358,19 +470,14 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                 type="primary"
                 icon={<SendOutlined />}
                 onClick={handleSendMessage}
-                disabled={!inputValue.trim() || isLoading}
+                disabled={(!inputValue.trim() && referencedDocuments.length === 0) || isLoading}
                 className="bg-green-500 hover:bg-green-600 border-green-500 hover:border-green-600 rounded-lg"
                 size="large"
               />
             </div>
           </Card>
           
-          <div className="mt-2 text-center">
-            <Text className="text-xs text-gray-500">
-              ChatGPT可能会犯错。请核实重要信息。
-            </Text>
-          </div>
-
+          
 
         </div>
       </div>
