@@ -1,6 +1,7 @@
 package cn.iocoder.boot.chatbycard.service.impl;
 
 import cn.iocoder.boot.chatbycard.dto.AgentDTO;
+import cn.iocoder.boot.chatbycard.dto.CreateAgentRequest;
 import cn.iocoder.boot.chatbycard.entity.ChatAgentsInfo;
 import cn.iocoder.boot.chatbycard.mapper.ChatAgentsInfoMapper;
 import cn.iocoder.boot.chatbycard.service.AgentService;
@@ -11,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -117,6 +120,38 @@ public class AgentServiceImpl implements AgentService {
         } catch (NumberFormatException e) {
             log.error("无效的代理ID: {}", id);
         }
+    }
+
+    @Override
+    @Transactional
+    public AgentDTO createAgent(CreateAgentRequest request) {
+        log.info("创建新的AI代理，名称: {}", request.getName());
+        
+        // 1. 创建Agent实体
+        ChatAgentsInfo agent = new ChatAgentsInfo();
+        agent.setName(request.getName());
+        agent.setDescription(request.getDescription());
+        agent.setType(request.getType());
+        agent.setIcon(request.getIcon());
+        agent.setModelName(request.getModelName());
+        agent.setSystemPrompt(request.getSystemPrompt());
+        agent.setTemperature(BigDecimal.valueOf(request.getTemperature()));
+        agent.setMaxTokens(request.getMaxTokens());
+        agent.setCallCount(0L); // 初始调用次数为0
+        agent.setCreateTime(OffsetDateTime.now());
+        agent.setUpdateTime(OffsetDateTime.now());
+        
+        // 2. 保存到数据库
+        int result = agentMapper.insert(agent);
+        
+        if (result <= 0) {
+            throw new RuntimeException("创建Agent失败");
+        }
+        
+        log.info("AI代理创建成功，ID: {}, 名称: {}", agent.getId(), agent.getName());
+        
+        // 3. 返回创建的Agent信息
+        return convertToDTO(agent);
     }
 
     /**

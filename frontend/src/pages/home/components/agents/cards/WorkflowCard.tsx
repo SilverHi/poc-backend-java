@@ -1,6 +1,5 @@
 import React from 'react';
-import { Card, Avatar, Button, Tag, Typography } from 'antd';
-import { PlayCircleOutlined } from '@ant-design/icons';
+import { Card, Avatar, Tag, Typography } from 'antd';
 
 const { Text } = Typography;
 
@@ -20,9 +19,7 @@ interface Workflow {
 interface WorkflowCardProps {
   workflow: Workflow;
   isSelected: boolean;
-  executing: boolean;
   onSelect: (id: string) => void;
-  onExecute: (id: string) => void;
   formatCallCount: (count: number) => string;
   getIcon: (iconName: string) => React.ReactNode;
 }
@@ -30,9 +27,7 @@ interface WorkflowCardProps {
 const WorkflowCard: React.FC<WorkflowCardProps> = ({
   workflow,
   isSelected,
-  executing,
   onSelect,
-  onExecute,
   formatCallCount,
   getIcon
 }) => {
@@ -44,14 +39,14 @@ const WorkflowCard: React.FC<WorkflowCardProps> = ({
           ? 'border-green-500 shadow-md bg-green-50' 
           : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
       }`}
-      bodyStyle={{ padding: '16px' }}
+      bodyStyle={{ padding: '12px' }}
       onClick={() => onSelect(workflow.id)}
     >
       <div className="flex items-start space-x-3">
         <div className="relative">
           <Avatar 
             icon={getIcon(workflow.icon)} 
-            size={40}
+            size={32}
             className={`${
               isSelected 
                 ? 'bg-green-500' 
@@ -61,29 +56,17 @@ const WorkflowCard: React.FC<WorkflowCardProps> = ({
         </div>
         
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-1">
+          <div className="mb-1">
             <Text className="font-medium text-gray-800 truncate text-sm">
               {workflow.name}
             </Text>
-            <Button 
-              type="primary" 
-              size="small" 
-              icon={<PlayCircleOutlined />}
-              loading={executing}
-              onClick={(e) => {
-                e.stopPropagation();
-                onExecute(workflow.id);
-              }}
-            >
-              执行
-            </Button>
           </div>
           
-          <Text className="text-xs text-gray-500 block mb-2">
+          <Text className="text-xs text-gray-500 block mb-1">
             {workflow.description}
           </Text>
           
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-1">
             <div className="flex items-center space-x-1">
               <span className="text-xs text-green-600 font-medium">
                 执行 {formatCallCount(workflow.callCount)} 次
@@ -95,11 +78,11 @@ const WorkflowCard: React.FC<WorkflowCardProps> = ({
           </div>
         
           {isSelected && (
-            <div className="mt-3 pt-3 border-t border-gray-200">
-              <Text className="text-xs text-gray-600 block mb-2">
+            <div className="mt-2 pt-2 border-t border-gray-200">
+              <Text className="text-xs text-gray-600 block mb-1">
                 执行步骤：
               </Text>
-              <div className="space-y-1 mb-3">
+              <div className="space-y-1 mb-2">
                 {workflow.steps.map((step, index) => (
                   <div key={index} className="flex items-center space-x-2">
                     <span className="w-4 h-4 bg-green-100 text-green-600 rounded-full text-xs flex items-center justify-center">

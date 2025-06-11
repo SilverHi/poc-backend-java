@@ -2,11 +2,13 @@ package cn.iocoder.boot.chatbycard.controller;
 
 import cn.iocoder.boot.chatbycard.dto.AgentDTO;
 import cn.iocoder.boot.chatbycard.dto.ApiResponse;
+import cn.iocoder.boot.chatbycard.dto.CreateAgentRequest;
 import cn.iocoder.boot.chatbycard.service.AgentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.List;
 
 /**
@@ -127,6 +129,22 @@ public class AgentController {
         } catch (Exception e) {
             log.error("增加代理调用次数失败: {}", e.getMessage(), e);
             return ApiResponse.error("增加代理调用次数失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 创建新的Agent
+     */
+    @PostMapping
+    public ApiResponse<AgentDTO> createAgent(@Valid @RequestBody CreateAgentRequest request) {
+        log.info("创建Agent请求，名称: {}, 类型: {}", request.getName(), request.getType());
+        
+        try {
+            AgentDTO agent = agentService.createAgent(request);
+            return ApiResponse.success(agent, "Agent创建成功");
+        } catch (Exception e) {
+            log.error("创建Agent失败: {}", e.getMessage(), e);
+            return ApiResponse.error("创建Agent失败: " + e.getMessage());
         }
     }
 

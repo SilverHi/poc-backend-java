@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Typography, Tabs, message, Spin } from 'antd';
+import { useNavigate } from 'react-router-dom';
 import { 
   RobotOutlined, 
   ApartmentOutlined,
@@ -11,72 +12,87 @@ import {
   FileOutlined, 
   TranslationOutlined, 
   ApiOutlined, 
-  PictureOutlined
+  PictureOutlined,
+  PlusOutlined
 } from '@ant-design/icons';
-import { getAgents, getWorkflows, getTools, executeWorkflow, executeTool, type Agent, type Workflow, type Tool } from '../../../../api';
+import { getAgents, getWorkflows, getTools, executeTool, type Agent, type Workflow, type Tool } from '../../../../api';
 import { AgentCard, WorkflowCard, ToolCard } from './cards';
 
 // 自定义滚动条样式
 const scrollbarStyles = `
-  .custom-scrollbar {
+  .agents-panel-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: #d1d5db #f3f4f6;
   }
   
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+  .agents-panel-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
   }
   
-  .custom-scrollbar::-webkit-scrollbar-track {
+  .agents-panel-scrollbar::-webkit-scrollbar-track {
     background: #f9fafb;
-    border-radius: 4px;
-    margin: 2px;
+    border-radius: 3px;
   }
   
-  .custom-scrollbar::-webkit-scrollbar-thumb {
+  .agents-panel-scrollbar::-webkit-scrollbar-thumb {
     background: #d1d5db;
-    border-radius: 4px;
+    border-radius: 3px;
     transition: background 0.3s ease;
-    min-height: 20px;
   }
   
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  .agents-panel-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #9ca3af;
   }
   
-  .custom-scrollbar-blue::-webkit-scrollbar-thumb {
+  .agents-panel-scrollbar-blue::-webkit-scrollbar-thumb {
     background: #3b82f6;
-    opacity: 0.7;
   }
   
-  .custom-scrollbar-blue::-webkit-scrollbar-thumb:hover {
+  .agents-panel-scrollbar-blue::-webkit-scrollbar-thumb:hover {
     background: #2563eb;
-    opacity: 0.9;
   }
   
-  .custom-scrollbar-green::-webkit-scrollbar-thumb {
+  .agents-panel-scrollbar-green::-webkit-scrollbar-thumb {
     background: #10b981;
-    opacity: 0.7;
   }
   
-  .custom-scrollbar-green::-webkit-scrollbar-thumb:hover {
+  .agents-panel-scrollbar-green::-webkit-scrollbar-thumb:hover {
     background: #059669;
-    opacity: 0.9;
   }
   
-  .custom-scrollbar-purple::-webkit-scrollbar-thumb {
+  .agents-panel-scrollbar-purple::-webkit-scrollbar-thumb {
     background: #8b5cf6;
-    opacity: 0.7;
   }
   
-  .custom-scrollbar-purple::-webkit-scrollbar-thumb:hover {
+  .agents-panel-scrollbar-purple::-webkit-scrollbar-thumb:hover {
     background: #7c3aed;
-    opacity: 0.9;
   }
   
-  .custom-scrollbar::-webkit-scrollbar-corner {
+  .agents-panel-scrollbar::-webkit-scrollbar-corner {
     background: transparent;
+  }
+  
+  /* 确保Ant Design Tabs的样式不会覆盖滚动条 */
+  .agents-panel-tabs {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+  }
+  
+  .agents-panel-tabs .ant-tabs-content-holder {
+    flex: 1 !important;
+    overflow: hidden !important;
+  }
+  
+  .agents-panel-tabs .ant-tabs-content {
+    height: 100% !important;
+  }
+  
+  .agents-panel-tabs .ant-tabs-tabpane-active {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 `;
 
@@ -88,6 +104,7 @@ interface AgentsPanelProps {
 }
 
 const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string>('agents');
   const [selectedAgent, setSelectedAgent] = useState<string>('');
   const [selectedWorkflow, setSelectedWorkflow] = useState<string>('');
@@ -98,15 +115,16 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
   const [tools, setTools] = useState<Tool[]>([]);
   
   const [loading, setLoading] = useState<boolean>(false);
+  const [workflowsLoading, setWorkflowsLoading] = useState<boolean>(false);
+  const [workflowsLoaded, setWorkflowsLoaded] = useState<boolean>(false);
   const [executing, setExecuting] = useState<boolean>(false);
 
-  // 加载数据
+  // 加载初始数据（只加载agents和tools）
   const loadData = async () => {
     setLoading(true);
     try {
-      const [agentsResult, workflowsResult, toolsResult] = await Promise.all([
+      const [agentsResult, toolsResult] = await Promise.all([
         getAgents(),
-        getWorkflows(),
         getTools()
       ]);
 
@@ -114,13 +132,6 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
         setAgents(agentsResult.data);
         if (agentsResult.data.length > 0) {
           setSelectedAgent(agentsResult.data[0].id);
-        }
-      }
-
-      if (workflowsResult.success && workflowsResult.data) {
-        setWorkflows(workflowsResult.data);
-        if (workflowsResult.data.length > 0) {
-          setSelectedWorkflow(workflowsResult.data[0].id);
         }
       }
 
@@ -134,6 +145,30 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
       message.error('加载数据失败');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 加载workflows数据
+  const loadWorkflows = async () => {
+    if (workflowsLoaded) return; // 如果已经加载过，不重复加载
+    
+    setWorkflowsLoading(true);
+    try {
+      const workflowsResult = await getWorkflows();
+
+      if (workflowsResult.success && workflowsResult.data) {
+        setWorkflows(workflowsResult.data);
+        if (workflowsResult.data.length > 0) {
+          setSelectedWorkflow(workflowsResult.data[0].id);
+        }
+        setWorkflowsLoaded(true);
+      } else {
+        message.error(workflowsResult.error || '加载工作流失败');
+      }
+    } catch (error) {
+      message.error('加载工作流过程中发生错误');
+    } finally {
+      setWorkflowsLoading(false);
     }
   };
 
@@ -215,21 +250,7 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
   };
 
   // 执行工作流
-  const handleExecuteWorkflow = async (workflowId: string) => {
-    setExecuting(true);
-    try {
-      const result = await executeWorkflow(workflowId);
-      if (result.success) {
-        message.success(`工作流启动成功，任务ID: ${result.data?.jobId}`);
-      } else {
-        message.error(result.error || '执行失败');
-      }
-    } catch (error) {
-      message.error('执行过程中发生错误');
-    } finally {
-      setExecuting(false);
-    }
-  };
+
 
   // 使用工具
   const handleUseTool = async (toolId: string) => {
@@ -248,9 +269,45 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
     }
   };
 
+  // 处理添加新Agent
+  const handleAddAgent = () => {
+    navigate('/agent-create');
+  };
+
+  // 处理tab切换
+  const handleTabChange = (key: string) => {
+    setActiveTab(key);
+    
+    // 如果切换到workflows tab且还没有加载过workflows，则加载数据
+    if (key === 'workflows' && !workflowsLoaded) {
+      loadWorkflows();
+    }
+  };
+
   // Agents标签页内容
   const renderAgents = () => (
     <div className="space-y-3">
+      {/* 添加Agent按钮卡片 */}
+      <div 
+        onClick={handleAddAgent}
+        className="cursor-pointer transition-all duration-200 border-2 border-dashed border-gray-300 hover:border-gray-400 hover:shadow-sm rounded-lg p-3 bg-gray-50 hover:bg-gray-100"
+      >
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-lg bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors duration-200 flex-shrink-0">
+            <PlusOutlined className="text-gray-600 hover:text-gray-700 text-sm" />
+          </div>
+          <div className="flex-1">
+            <span className="text-sm text-gray-700 hover:text-gray-900 font-medium block">
+              Create New Agent
+            </span>
+            <span className="text-xs text-gray-500">
+              Build your custom AI assistant
+            </span>
+          </div>
+        </div>
+      </div>
+      
+      {/* 现有的agents列表 */}
       {agents.map((agent) => (
         <AgentCard
           key={agent.id}
@@ -265,22 +322,40 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
   );
 
   // Workflows标签页内容
-  const renderWorkflows = () => (
-    <div className="space-y-3">
-      {workflows.map((workflow) => (
-        <WorkflowCard
-          key={workflow.id}
-          workflow={workflow}
-          isSelected={selectedWorkflow === workflow.id}
-          executing={executing}
-          onSelect={handleWorkflowSelect}
-          onExecute={handleExecuteWorkflow}
-          formatCallCount={formatCallCount}
-          getIcon={getIcon}
-        />
-      ))}
-    </div>
-  );
+  const renderWorkflows = () => {
+    if (workflowsLoading) {
+      return (
+        <div className="flex justify-center items-center h-32">
+          <Spin size="large" />
+        </div>
+      );
+    }
+
+    if (!workflowsLoaded && workflows.length === 0) {
+      return (
+        <div className="flex justify-center items-center h-32">
+          <div className="text-center">
+            <div className="text-gray-400 mb-2">点击此标签页加载工作流列表</div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        {workflows.map((workflow) => (
+          <WorkflowCard
+            key={workflow.id}
+            workflow={workflow}
+            isSelected={selectedWorkflow === workflow.id}
+            onSelect={handleWorkflowSelect}
+            formatCallCount={formatCallCount}
+            getIcon={getIcon}
+          />
+        ))}
+      </div>
+    );
+  };
 
   // Tools标签页内容
   const renderTools = () => (
@@ -301,14 +376,14 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
   );
 
   return (
-    <div className="h-full bg-white border border-gray-200 rounded-lg flex flex-col">
+    <div className="h-full flex flex-col rounded-xl overflow-hidden">
       {/* 头部区域 */}
-      <div className="p-6 border-b border-gray-200">
-        <Title level={4} className="text-gray-900 mb-2 font-semibold">
-          智能助手中心
+      <div className="p-8 pb-6">
+        <Title level={4} className="text-gray-900 mb-3 font-medium">
+          AI Assistants
         </Title>
-        <Text className="text-gray-600 text-sm">
-          选择AI助手、工作流或工具来完成您的任务
+        <Text className="text-gray-500 text-sm leading-relaxed">
+          Choose from intelligent agents, workflows, and tools to enhance your productivity.
         </Text>
       </div>
 
@@ -316,19 +391,20 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
       <div className="flex-1 overflow-hidden">
         <Tabs 
           activeKey={activeTab} 
-          onChange={setActiveTab}
-          className="h-full flex flex-col"
+          onChange={handleTabChange}
+          className="h-full agents-panel-tabs"
           size="small"
           centered
           tabBarStyle={{ 
-            paddingLeft: '16px', 
-            paddingRight: '16px', 
+            paddingLeft: '32px', 
+            paddingRight: '32px', 
             marginBottom: 0,
-            minHeight: '40px',
+            minHeight: '48px',
             fontSize: '14px',
-            flexShrink: 0
+            flexShrink: 0,
+            backgroundColor: 'transparent'
           }}
-          tabBarGutter={24}
+          tabBarGutter={32}
         >
           <TabPane 
             tab={
@@ -340,7 +416,7 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
             key="agents"
             className="h-full flex flex-col"
           >
-            <div className="flex-1 p-4 overflow-auto">
+            <div className="flex-1 px-8 pb-8 overflow-auto agents-panel-scrollbar agents-panel-scrollbar-blue">
               {loading ? (
                 <div className="flex justify-center items-center h-32">
                   <Spin size="large" />
@@ -361,18 +437,12 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
             key="workflows"
             className="h-full flex flex-col"
           >
-            <div className="flex-1 p-4 overflow-auto">
-              {loading ? (
-                <div className="flex justify-center items-center h-32">
-                  <Spin size="large" />
-                </div>
-              ) : (
-                renderWorkflows()
-              )}
+            <div className="flex-1 px-8 pb-8 overflow-auto agents-panel-scrollbar agents-panel-scrollbar-green">
+              {renderWorkflows()}
             </div>
           </TabPane>
           
-          <TabPane 
+          {/* <TabPane 
             tab={
               <span className="flex items-center gap-1">
                 <ToolOutlined className="text-xs" />
@@ -382,7 +452,7 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
             key="tools"
             className="h-full flex flex-col"
           >
-            <div className="flex-1 p-4 overflow-auto">
+            <div className="flex-1 px-8 pb-8 overflow-auto agents-panel-scrollbar agents-panel-scrollbar-purple">
               {loading ? (
                 <div className="flex justify-center items-center h-32">
                   <Spin size="large" />
@@ -391,7 +461,7 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
                 renderTools()
               )}
             </div>
-          </TabPane>
+          </TabPane> */}
         </Tabs>
       </div>
     </div>

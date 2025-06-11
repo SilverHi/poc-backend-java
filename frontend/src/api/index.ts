@@ -352,6 +352,22 @@ const convertBackendAgentToFrontend = (agent: any): Agent => {
   };
 };
 
+// 工具函数：转换外部workflow API响应为前端格式
+const convertExternalWorkflowToFrontend = (workflow: any): Workflow => {
+  return {
+    id: workflow.id.toString(),
+    name: workflow.name || 'Untitled Workflow',
+    type: workflow.type || 'automation',
+    icon: 'workflow',
+    description: workflow.description || 'No description',
+    steps: workflow.steps || [],
+    agents: workflow.agents || [],
+    estimatedTime: workflow.estimatedTime || '1-2分钟',
+    category: 'workflow' as const,
+    callCount: workflow.callCount || 0
+  };
+};
+
 /**
  * 获取所有Agents - 真实API
  */
@@ -430,6 +446,48 @@ const realIncrementAgentCallCount = async (id: string): Promise<ApiResponse<bool
 };
 
 /**
+ * 获取所有Workflows - 通过Java后端API
+ */
+const realGetWorkflows = async (): Promise<ApiResponse<Workflow[]>> => {
+  try {
+    const result = await httpRequest<any>('/api/chatbycard/workflows');
+    
+    // 处理双重嵌套：httpRequest返回{success, data}，其中data是后端的ApiResponse
+    if (result.success && result.data) {
+      const backendResponse = result.data;
+      
+      if (backendResponse.success && backendResponse.data && backendResponse.data.data && Array.isArray(backendResponse.data.data)) {
+        // 转换后端数据格式为前端期望的格式
+        const workflows: Workflow[] = backendResponse.data.data.map((workflow: any) => 
+          convertExternalWorkflowToFrontend(workflow)
+        );
+        
+        return {
+          success: true,
+          data: workflows,
+        };
+      }
+      
+      return {
+        success: false,
+        error: backendResponse.error || '获取工作流列表失败：数据格式错误'
+      };
+    }
+    
+    return {
+      success: false,
+      error: result.error || '获取工作流列表失败：请求失败'
+    };
+  } catch (error) {
+    console.error('Get workflows error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '获取工作流列表失败'
+    };
+  }
+};
+
+/**
  * 获取所有Agents
  */
 export const getAgents = async (): Promise<ApiResponse<Agent[]>> => {
@@ -440,7 +498,7 @@ export const getAgents = async (): Promise<ApiResponse<Agent[]>> => {
  * 获取所有Workflows
  */
 export const getWorkflows = async (): Promise<ApiResponse<Workflow[]>> => {
-  return API_CONFIG.USE_MOCK ? mockGetWorkflows() : httpRequest<Workflow[]>('/api/workflows');
+  return API_CONFIG.USE_MOCK ? mockGetWorkflows() : realGetWorkflows();
 };
 
 /**
@@ -511,6 +569,152 @@ export const executeTool = async (toolId: string, params?: any): Promise<ApiResp
     method: 'POST',
     body: JSON.stringify({ toolId, params }),
   });
+};
+
+// ==================== AI聊天相关API ====================
+
+/**
+ * AI聊天请求接口
+ */
+export interface AiChatRequest {
+  agentId?: string;
+  documentIds?: string[];
+  userInput?: string;
+  previousAiOutput?: string;
+}
+
+/**
+ * AI聊天响应接口
+ */
+export interface AiChatResponse {
+  content: string;
+  modelName: string;
+  agentName?: string;
+  timestamp: string;
+  characterCount: number;
+}
+
+/**
+ * 调用AI聊天接口
+ */
+export const aiChat = async (request: AiChatRequest): Promise<ApiResponse<AiChatResponse>> => {
+  try {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/chatbycard/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    
+    if (result.success && result.data) {
+      return {
+        success: true,
+        data: result.data,
+      };
+    } else {
+      return {
+        success: false,
+        error: result.message || 'AI聊天请求失败',
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'AI聊天请求失败',
+    };
+  }
+};
+
+/**
+ * 调用AI聊天流式接口
+ * @param request 聊天请求
+ * @param onChunk 接收到数据块时的回调函数
+ * @param onError 发生错误时的回调函数
+ * @param onComplete 完成时的回调函数
+ */
+export const aiChatStream = async (
+  request: AiChatRequest,
+  onChunk: (chunk: string) => void,
+  onError: (error: string) => void,
+  onComplete: () => void
+): Promise<void> => {
+  try {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/chatbycard/chat/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('无法获取响应流');
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          break;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // 保留可能不完整的最后一行
+
+        for (const line of lines) {
+          if (line.trim() === '') continue;
+          
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6); // 移除 "data: " 前缀
+            
+            if (data === '[DONE]') {
+              onComplete();
+              return;
+            }
+
+            // 处理错误数据
+            if (data.startsWith('{') && data.includes('error')) {
+              try {
+                const errorData = JSON.parse(data);
+                if (errorData.error) {
+                  onError(errorData.error);
+                  return;
+                }
+              } catch (e) {
+                // 如果不是JSON格式的错误，继续处理
+              }
+            }
+
+            // 处理正常的文本数据
+            if (data && data !== '') {
+              onChunk(data);
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  } catch (error) {
+    onError(error instanceof Error ? error.message : 'AI流式聊天请求失败');
+  }
 };
 
 // 导出类型

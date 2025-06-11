@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Typography, Tag, Space } from 'antd';
 import { UserOutlined, RobotOutlined, FileTextOutlined, ToolOutlined } from '@ant-design/icons';
 import MarkdownRenderer from '../../../../components/MarkdownRenderer';
@@ -18,7 +18,7 @@ interface SelectedAgent {
   description?: string;
 }
 
-interface MessageCardProps {
+interface StreamMessageCardProps {
   id: string;
   type: 'user' | 'assistant';
   timestamp: Date;
@@ -31,12 +31,14 @@ interface MessageCardProps {
   
   // AI回复相关
   aiResponse?: string;
+  isStreaming?: boolean;
+  streamingContent?: string;
   
   // 状态
   isTyping?: boolean;
 }
 
-const MessageCard: React.FC<MessageCardProps> = ({
+const StreamMessageCard: React.FC<StreamMessageCardProps> = ({
   id,
   type,
   timestamp,
@@ -45,12 +47,38 @@ const MessageCard: React.FC<MessageCardProps> = ({
   referencedDocuments = [],
   selectedAgent,
   aiResponse,
+  isStreaming = false,
+  streamingContent = '',
   isTyping = false
 }) => {
+  const [displayContent, setDisplayContent] = useState('');
+  const [showCursor, setShowCursor] = useState(false);
+
   const isUserMessage = type === 'user';
   const hasReferencedDocuments = referencedDocuments.length > 0;
   const hasSelectedAgent = !!selectedAgent;
   const hasPreviousAiOutput = !!previousAiOutput;
+
+  // 管理光标闪烁效果
+  useEffect(() => {
+    if (isStreaming) {
+      const interval = setInterval(() => {
+        setShowCursor(prev => !prev);
+      }, 500);
+      return () => clearInterval(interval);
+    } else {
+      setShowCursor(false);
+    }
+  }, [isStreaming]);
+
+  // 更新显示内容
+  useEffect(() => {
+    if (isStreaming) {
+      setDisplayContent(streamingContent);
+    } else if (aiResponse) {
+      setDisplayContent(aiResponse);
+    }
+  }, [isStreaming, streamingContent, aiResponse]);
 
   return (
     <div className="w-full">
@@ -148,10 +176,22 @@ const MessageCard: React.FC<MessageCardProps> = ({
                 <div className="bg-green-50 rounded-lg p-3 border-l-4 border-green-400">
                   <div className="flex items-center mb-2">
                     <RobotOutlined className="text-green-600 mr-2" />
-                    <Text className="text-sm font-medium text-gray-700">AI回复</Text>
+                    <Text className="text-sm font-medium text-gray-700">
+                      AI回复
+                      {isStreaming && (
+                        <span className="ml-2 text-xs text-green-500">正在生成...</span>
+                      )}
+                    </Text>
                   </div>
-                  <div className="text-sm text-gray-800">
-                    <MarkdownRenderer content={aiResponse || ''} />
+                  <div className="text-sm text-gray-800 relative">
+                    <MarkdownRenderer content={displayContent} />
+                    {/* 流式输入光标 */}
+                    {isStreaming && (
+                      <span 
+                        className={`inline-block w-0.5 h-4 bg-green-500 ml-1 ${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity`}
+                        style={{ animation: 'blink 1s infinite' }}
+                      />
+                    )}
                   </div>
                 </div>
               )}
@@ -165,8 +205,16 @@ const MessageCard: React.FC<MessageCardProps> = ({
           {timestamp.toLocaleTimeString()}
         </Text>
       </div>
+
+      {/* 添加光标闪烁动画的样式 */}
+      <style>{`
+        @keyframes blink {
+          0%, 50% { opacity: 1; }
+          51%, 100% { opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 };
 
-export default MessageCard; 
+export default StreamMessageCard; 

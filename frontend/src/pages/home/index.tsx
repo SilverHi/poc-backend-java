@@ -67,14 +67,14 @@ const Home: React.FC = () => {
       <Navigation />
       
       {/* 主要内容区域 */}
-      <Content className="flex h-[calc(100vh-64px)] overflow-hidden">
+      <Content className="flex h-[calc(100vh-64px)] overflow-hidden gap-6 p-6">
         {/* 左侧资源选择区 */}
-        <div className="w-80 flex-shrink-0 h-full border-r border-gray-200">
+        <div className="w-80 flex-shrink-0 h-full bg-white rounded-xl shadow-sm border border-gray-200">
           <ResourcePanel onDocumentSelect={handleAddDocument} />
         </div>
         
         {/* 中间对话区 */}
-        <div className="flex-1 h-full min-w-0">
+        <div className="flex-1 h-full min-w-0 bg-white rounded-xl shadow-sm border border-gray-200">
           <ChatArea 
             referencedDocuments={referencedDocuments}
             selectedAgent={selectedAgent}
@@ -84,7 +84,7 @@ const Home: React.FC = () => {
         </div>
         
         {/* 右侧Agents选择区 */}
-        <div className="w-80 flex-shrink-0 h-full border-l border-gray-200">
+        <div className="w-80 flex-shrink-0 h-full bg-white rounded-xl shadow-sm border border-gray-200">
           <AgentsPanel onAgentSelect={handleSelectAgent} />
         </div>
       </Content>

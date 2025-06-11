@@ -4,7 +4,8 @@ import { SendOutlined, PaperClipOutlined, AudioOutlined, CloseOutlined, FileText
 import MessageCard from './MessageCard';
 import StepCard from './StepCard';
 
-import { getDocumentsContent, incrementAgentCallCount } from '../../../../api';
+import { getDocumentsContent, incrementAgentCallCount, aiChat } from '../../../../api';
+import type { AiChatRequest } from '../../../../api';
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -102,7 +103,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       // 步骤1: 开始处理
       setProcessSteps([{
         id: 'step1',
-        content: selectedAgent ? `正在使用 ${selectedAgent.name} 处理...` : '开始处理请求...',
+        content: selectedAgent ? `Processing with ${selectedAgent.name}...` : 'Starting to process request...',
         status: 'processing',
         timestamp: new Date()
       }]);
@@ -112,7 +113,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       if (referencedDocuments.length > 0) {
         setProcessSteps(prev => [...prev, {
           id: 'step2',
-          content: '正在获取引用文档内容...',
+          content: 'Retrieving referenced document content...',
           status: 'processing',
           timestamp: new Date()
         }]);
@@ -134,7 +135,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       if (selectedAgent && selectedAgent.id) {
         setProcessSteps(prev => [...prev, {
           id: 'step3',
-          content: `正在加载 ${selectedAgent.name} 的配置...`,
+          content: `Loading ${selectedAgent.name} configuration...`,
           status: 'processing',
           timestamp: new Date()
         }]);
@@ -163,29 +164,23 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       // 步骤4: 调用后端AI服务
       setProcessSteps(prev => [...prev, {
         id: 'step4',
-        content: '正在调用后端AI服务...',
+        content: 'Calling backend AI service...',
         status: 'processing',
         timestamp: new Date()
       }]);
 
-      // TODO: 这里将调用Java后端的AI服务API
-      // 当前临时使用模拟响应
-      await new Promise(resolve => setTimeout(resolve, 2000)); // 模拟网络延迟
-
-      const mockResponse = {
-        success: true,
-        content: `感谢您的提问！我收到了您的消息："${inputValue}"。${
-          referencedDocuments.length > 0 
-            ? `\n\n我注意到您引用了 ${referencedDocuments.length} 个文档：${referencedDocuments.map(doc => doc.name).join('、')}。` 
-            : ''
-        }${
-          selectedAgent 
-            ? `\n\n您选择使用了 ${selectedAgent.name} 来处理这个请求。`
-            : ''
-        }\n\n当前前端已经清理了直接调用OpenAI API的逻辑，等待后端Java服务实现AI功能。`
+      // 准备AI聊天请求数据
+      const aiChatRequest: AiChatRequest = {
+        agentId: agentInfo?.id || undefined,
+        documentIds: referencedDocuments.length > 0 ? referencedDocuments.map(doc => doc.id) : undefined,
+        userInput: inputValue || undefined,
+        previousAiOutput: lastAiResponse || undefined,
       };
 
-      if (mockResponse.success && mockResponse.content) {
+      // 调用真实的AI聊天API
+      const aiResponse = await aiChat(aiChatRequest);
+
+      if (aiResponse.success && aiResponse.data) {
         // 如果使用了Agent，增加调用次数
         if (agentInfo && agentInfo.id) {
           await incrementAgentCallCount(agentInfo.id);
@@ -201,17 +196,17 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         const assistantReply: ChatMessage = {
           id: (Date.now() + 2).toString(),
           type: 'assistant',
-          aiResponse: mockResponse.content,
+          aiResponse: aiResponse.data.content,
           timestamp: new Date()
         };
         
         setMessages(prev => [...prev, assistantReply]);
-        setLastAiResponse(mockResponse.content);
+        setLastAiResponse(aiResponse.data.content);
       } else {
-        // 处理错误
+        // 处理AI聊天失败的情况
         setProcessSteps(prev => [...prev, {
           id: 'error',
-          content: `调用失败: ${mockResponse.content || '未知错误'}`,
+          content: `AI聊天失败: ${aiResponse.error || '未知错误'}`,
           status: 'completed',
           timestamp: new Date()
         }]);
@@ -220,7 +215,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         const errorReply: ChatMessage = {
           id: (Date.now() + 2).toString(),
           type: 'assistant',
-          aiResponse: `抱歉，处理您的请求时发生了错误。当前系统正在开发中，等待后端Java服务实现AI功能。`,
+          aiResponse: `抱歉，处理您的请求时发生了错误：${aiResponse.error || '未知错误'}`,
           timestamp: new Date()
         };
         
@@ -267,21 +262,21 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col bg-white">
+    <div className="h-full flex flex-col rounded-xl overflow-hidden">
       {/* 聊天区域 */}
-      <div className="flex-1 overflow-auto px-4 py-6">
+      <div className="flex-1 overflow-auto px-8 py-8">
         <div className="max-w-4xl mx-auto">
           {/* 空状态提示 */}
           {messages.length === 0 && (
             <div className="h-full flex items-center justify-center">
-              <div className="text-center space-y-4">
-                <div className="text-gray-400 text-lg font-medium">
-                  开始你的AI对话
+              <div className="text-center space-y-6">
+                <div className="text-gray-600 text-xl font-medium">
+                  Start Your AI Conversation
                 </div>
-                <div className="text-gray-300 text-sm space-y-1">
-                  <p>选择文档资源和AI助手</p>
-                  <p>输入你的问题开始对话</p>
-                  <p>体验智能工作流程</p>
+                <div className="text-gray-400 text-sm space-y-2 leading-relaxed">
+                  <p>Select document resources and AI assistants</p>
+                  <p>Type your question to begin the conversation</p>
+                  <p>Experience intelligent workflows</p>
                 </div>
               </div>
             </div>
@@ -306,15 +301,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                     isTyping={message.isTyping}
                   />
                   
-                  {/* 连接线 */}
-                  {(index < messages.length - 1 || (message.type === 'user' && processSteps.length > 0)) && (
-                    <div className="absolute left-1/2 -bottom-4 transform -translate-x-1/2">
-                      <div className="w-0.5 h-8 bg-gray-300"></div>
-                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 -translate-y-1">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                      </div>
-                    </div>
-                  )}
+
                 </div>
                 
                 {/* 如果是用户消息，显示对应的处理步骤 */}
@@ -329,26 +316,9 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                           timestamp={step.timestamp}
                         />
                         
-                        {/* Step之间的连接线 */}
-                        {stepIndex < processSteps.length - 1 && (
-                          <div className="absolute left-1/2 -bottom-2 transform -translate-x-1/2">
-                            <div className="w-0.5 h-4 bg-blue-300"></div>
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -translate-y-1">
-                              <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
-                            </div>
-                          </div>
-                        )}
+
                         
-                        {/* 最后一个step到下一个消息的连接线 */}
-                        {stepIndex === processSteps.length - 1 && 
-                         index < messages.length - 1 && (
-                          <div className="absolute left-1/2 -bottom-4 transform -translate-x-1/2">
-                            <div className="w-0.5 h-8 bg-gray-300"></div>
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -translate-y-1">
-                              <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                            </div>
-                          </div>
-                        )}
+
                       </div>
                     ))}
                   </div>
@@ -362,46 +332,45 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       </div>
 
       {/* 输入区域 */}
-      <div className="border-t border-gray-200 bg-white">
-        <div className="max-w-3xl mx-auto p-4">
+      <div className="bg-gray-50 rounded-b-xl">
+        <div className="max-w-3xl mx-auto p-6">
           {/* Agent选择卡片头部 */}
           {selectedAgent && (
-            <Card 
-              className="mb-3 border border-blue-200 bg-blue-50"
-              bodyStyle={{ padding: '8px 12px' }}
-            >
+            <div className="mb-4 p-3 border border-blue-200 bg-blue-50 rounded-lg">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <ToolOutlined className="text-blue-600" />
+                <div className="flex items-center space-x-3">
+                  <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center">
+                    <ToolOutlined className="text-blue-600 text-sm" />
+                  </div>
                   <div>
-                    <Text className="font-medium text-blue-800">{selectedAgent.name}</Text>
+                    <Text className="font-medium text-blue-900">{selectedAgent.name}</Text>
                     {selectedAgent.description && (
-                      <Text className="text-xs text-blue-600 ml-2">{selectedAgent.description}</Text>
+                      <Text className="text-xs text-blue-700 ml-2">{selectedAgent.description}</Text>
                     )}
                   </div>
-                  <Tag color="blue" className="ml-2">
+                  <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-md font-medium">
                     {selectedAgent.type === 'workflow' ? 'Workflow' : 'Tool'}
-                  </Tag>
+                  </span>
                 </div>
                 <Button
                   type="text"
                   size="small"
                   icon={<CloseOutlined />}
                   onClick={clearSelectedAgent}
-                  className="text-blue-600 hover:text-blue-800"
+                  className="text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded"
                 />
               </div>
-            </Card>
+            </div>
           )}
 
           {/* 主输入卡片 */}
-          <Card className="shadow-lg border-0" bodyStyle={{ padding: '12px' }}>
+          <div className="bg-white shadow-lg border border-gray-200 rounded-lg p-4">
             {/* 引用文档区域 */}
             {referencedDocuments.length > 0 && (
-              <div className="mb-3 p-2 bg-gray-50 rounded-lg">
-                <div className="flex items-center mb-2">
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center mb-3">
                   <FileTextOutlined className="text-gray-600 mr-2" />
-                  <Text className="text-sm text-gray-600 font-medium">引用文档</Text>
+                  <Text className="text-sm text-gray-600 font-medium">Referenced Documents</Text>
                 </div>
                 <Space wrap>
                   {referencedDocuments.map((doc) => (
@@ -427,14 +396,14 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                   icon={<PaperClipOutlined />}
                   className="text-gray-400 hover:text-gray-600"
                   size="small"
-                  title="添加文档引用"
+                  title="Add document reference"
                 />
                 <Button 
                   type="text" 
                   icon={<AudioOutlined />}
                   className="text-gray-400 hover:text-gray-600"
                   size="small"
-                  title="语音输入"
+                  title="Voice input"
                 />
               </div>
               
@@ -445,10 +414,10 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                   onKeyPress={handleKeyPress}
                   placeholder={
                     selectedAgent 
-                      ? `使用 ${selectedAgent.name} 发送消息...`
+                      ? `Message using ${selectedAgent.name}...`
                       : referencedDocuments.length > 0
-                        ? "基于选择的文档提问..."
-                        : "发送消息给ChatbyCard..."
+                        ? "Ask questions based on selected documents..."
+                        : "Send a message to ChatbyCard..."
                   }
                   autoSize={{ minRows: 1, maxRows: 6 }}
                   className="border-0 resize-none focus:shadow-none"
@@ -465,11 +434,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                 icon={<SendOutlined />}
                 onClick={handleSendMessage}
                 disabled={(!inputValue.trim() && referencedDocuments.length === 0) || isLoading}
-                className="bg-green-500 hover:bg-green-600 border-green-500 hover:border-green-600 rounded-lg"
+                className="bg-black hover:bg-gray-800 border-black rounded-lg px-6"
                 size="large"
               />
             </div>
-          </Card>
+          </div>
           
           
 

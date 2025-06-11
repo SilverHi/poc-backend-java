@@ -43,14 +43,14 @@ const ToolCard: React.FC<ToolCardProps> = ({
           ? 'border-purple-500 shadow-md bg-purple-50' 
           : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
       }`}
-      bodyStyle={{ padding: '16px' }}
+      bodyStyle={{ padding: '12px' }}
       onClick={() => onSelect(tool.id)}
     >
       <div className="flex items-start space-x-3">
         <div className="relative">
           <Avatar 
             icon={getIcon(tool.icon)} 
-            size={40}
+            size={32}
             className={`${
               isSelected 
                 ? 'bg-purple-500' 
@@ -78,11 +78,11 @@ const ToolCard: React.FC<ToolCardProps> = ({
             </Button>
           </div>
           
-          <Text className="text-xs text-gray-500 block mb-2">
+          <Text className="text-xs text-gray-500 block mb-1">
             {tool.description}
           </Text>
           
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-1">
             <div className="flex items-center space-x-1">
               <span className="text-xs text-purple-600 font-medium">
                 使用 {formatCallCount(tool.callCount)} 次
@@ -94,11 +94,11 @@ const ToolCard: React.FC<ToolCardProps> = ({
           </div>
         
           {isSelected && (
-            <div className="mt-3 pt-3 border-t border-gray-200">
-              <Text className="text-xs text-gray-600 block mb-2">
+            <div className="mt-2 pt-2 border-t border-gray-200">
+              <Text className="text-xs text-gray-600 block mb-1">
                 功能特性：
               </Text>
-              <div className="flex flex-wrap gap-1 mb-3">
+              <div className="flex flex-wrap gap-1 mb-2">
                 {tool.features.map((feature, index) => (
                   <Tag key={index} color="purple" className="text-xs">
                     {feature}

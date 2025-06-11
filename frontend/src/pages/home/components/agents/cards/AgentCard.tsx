@@ -39,14 +39,14 @@ const AgentCard: React.FC<AgentCardProps> = ({
           ? 'border-blue-500 shadow-md bg-blue-50' 
           : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
       }`}
-      bodyStyle={{ padding: '16px' }}
+      bodyStyle={{ padding: '12px' }}
       onClick={() => onSelect(agent.id)}
     >
       <div className="flex items-start space-x-3">
         <div className="relative">
           <Avatar 
             icon={getIcon(agent.icon)} 
-            size={40}
+            size={32}
             className={`${
               isSelected 
                 ? 'bg-blue-500' 
@@ -68,11 +68,11 @@ const AgentCard: React.FC<AgentCardProps> = ({
             />
           </div>
           
-          <Text className="text-xs text-gray-500 block mb-2">
+          <Text className="text-xs text-gray-500 block mb-1">
             {agent.description}
           </Text>
           
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-1">
             <div className="flex items-center space-x-1">
               <span className="text-xs text-green-600 font-medium">
                 调用 {formatCallCount(agent.callCount)} 次
@@ -84,8 +84,8 @@ const AgentCard: React.FC<AgentCardProps> = ({
           </div>
         
           {isSelected && (
-            <div className="mt-3 pt-3 border-t border-gray-200">
-              <Text className="text-xs text-gray-600 block mb-2">
+            <div className="mt-2 pt-2 border-t border-gray-200">
+              <Text className="text-xs text-gray-600 block mb-1">
                 能力：
               </Text>
               <div className="flex flex-wrap gap-1">

@@ -1,8 +1,16 @@
 import React from 'react';
-import { Home } from './pages';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Home, AgentCreate } from './pages';
 
 function App(): React.JSX.Element {
-  return <Home />;
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/agent-create" element={<AgentCreate />} />
+      </Routes>
+    </Router>
+  );
 }
 
 export default App; 

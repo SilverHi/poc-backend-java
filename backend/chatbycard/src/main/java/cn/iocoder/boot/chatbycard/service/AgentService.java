@@ -1,6 +1,7 @@
 package cn.iocoder.boot.chatbycard.service;
 
 import cn.iocoder.boot.chatbycard.dto.AgentDTO;
+import cn.iocoder.boot.chatbycard.dto.CreateAgentRequest;
 
 import java.util.List;
 
@@ -48,4 +49,12 @@ public interface AgentService {
      * @param id 代理ID
      */
     void incrementCallCount(String id);
+
+    /**
+     * 创建新的Agent
+     *
+     * @param request 创建Agent请求
+     * @return 创建的Agent信息
+     */
+    AgentDTO createAgent(CreateAgentRequest request);
 } 

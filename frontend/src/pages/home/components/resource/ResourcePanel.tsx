@@ -27,10 +27,10 @@ const ResourcePanel: React.FC<ResourcePanelProps> = ({ onDocumentSelect }) => {
           setSelectedDocument(result.data[0].id);
         }
       } else {
-        message.error(result.error || '加载文档失败');
+        message.error(result.error || 'Failed to load documents');
       }
     } catch (error) {
-      message.error('加载文档失败');
+      message.error('Failed to load documents');
     } finally {
       setLoading(false);
     }
@@ -49,14 +49,14 @@ const ResourcePanel: React.FC<ResourcePanelProps> = ({ onDocumentSelect }) => {
       const result = await uploadDocument(file);
       
       if (result.success && result.document) {
-        message.success('文档上传成功');
+        message.success('Document uploaded successfully');
         await loadDocuments(); // 重新加载文档列表
         setSelectedDocument(result.document.id); // 选中新上传的文档
       } else {
-        message.error(result.error || '上传失败');
+        message.error(result.error || 'Upload failed');
       }
     } catch (error) {
-      message.error('上传过程中发生错误');
+      message.error('Error occurred during upload');
     } finally {
       setUploading(false);
     }
@@ -74,14 +74,14 @@ const ResourcePanel: React.FC<ResourcePanelProps> = ({ onDocumentSelect }) => {
   };
 
   return (
-    <div className="h-full bg-white border border-gray-200 rounded-lg flex flex-col">
+    <div className="h-full flex flex-col rounded-xl overflow-hidden">
       {/* 头部区域 */}
-      <div className="p-6 border-b border-gray-200">
-        <Title level={4} className="text-gray-900 mb-2 font-semibold">
-          资源库
+      <div className="p-8 pb-6">
+        <Title level={4} className="text-gray-900 mb-3 font-medium">
+          Knowledge Base
         </Title>
-        <Text className="text-gray-600 text-sm mb-4 block">
-          上传和管理您的文档资源，目前仅支持txt文本格式
+        <Text className="text-gray-500 text-sm mb-6 block leading-relaxed">
+          Upload and manage your document resources. Currently supports text files (.txt).
         </Text>
         
         <Upload
@@ -96,15 +96,15 @@ const ResourcePanel: React.FC<ResourcePanelProps> = ({ onDocumentSelect }) => {
             type="primary" 
             icon={<UploadOutlined />} 
             loading={uploading}
-            className="w-full h-10 bg-black hover:bg-gray-800 border-none rounded-lg font-medium"
+            className="w-full h-10 bg-black hover:bg-gray-800 border-black rounded-lg font-medium"
           >
-            {uploading ? '上传中...' : '上传文档'}
+            {uploading ? 'Uploading...' : 'Upload Document'}
           </Button>
         </Upload>
       </div>
 
       {/* 文档列表区域 */}
-      <div className="flex-1 p-4 overflow-auto">
+      <div className="flex-1 px-8 pb-8 overflow-auto">
         {loading ? (
           <div className="flex justify-center items-center h-32">
             <Spin size="large" />

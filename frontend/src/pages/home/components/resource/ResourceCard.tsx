@@ -36,15 +36,15 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
           ? 'border-black shadow-md bg-gray-50' 
           : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
       }`}
-      bodyStyle={{ padding: '16px' }}
+      bodyStyle={{ padding: '12px' }}
       onClick={() => onSelect(document.id)}
     >
       <div className="flex items-start space-x-3">
-        <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1">
+        <div className="w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5">
           {getFileIcon(document.type)}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-1">
             <Text className="font-medium text-gray-900 truncate text-sm">
               {document.name}
             </Text>
@@ -52,7 +52,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
               {document.size}
             </Text>
           </div>
-          <Text className="text-xs text-gray-600 leading-relaxed line-clamp-2 mb-2">
+          <Text className="text-xs text-gray-600 leading-relaxed line-clamp-2 mb-1">
             {document.preview}
           </Text>
           <Text className="text-xs text-gray-400">
