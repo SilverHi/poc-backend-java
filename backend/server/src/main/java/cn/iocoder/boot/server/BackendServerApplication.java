@@ -11,7 +11,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication(scanBasePackages = {
     "cn.iocoder.boot.server",
     "cn.iocoder.boot.workflow",
-    "cn.iocoder.boot.interaction"
+    "cn.iocoder.boot.chatbycard"
 })
 public class BackendServerApplication {
 
