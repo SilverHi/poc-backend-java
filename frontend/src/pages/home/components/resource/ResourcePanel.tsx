@@ -81,12 +81,13 @@ const ResourcePanel: React.FC<ResourcePanelProps> = ({ onDocumentSelect }) => {
           资源库
         </Title>
         <Text className="text-gray-600 text-sm mb-4 block">
-          上传和管理您的文档资源，目前支持txt文本格式
+          上传和管理您的文档资源，目前仅支持txt文本格式
         </Text>
         
         <Upload
           accept=".txt"
           showUploadList={false}
+          beforeUpload={() => false} // 禁用自动上传，手动控制
           onChange={handleUpload}
           className="w-full"
           disabled={uploading}

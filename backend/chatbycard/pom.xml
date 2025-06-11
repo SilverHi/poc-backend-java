@@ -39,12 +39,14 @@
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+            <!-- 版本由父级管理 -->
         </dependency>
         
         <!-- MyBatis-Plus JSQLParser for JDK 11+ -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-jsqlparser</artifactId>
+            <!-- 版本由父级管理 -->
         </dependency>
         
         <!-- 文件上传相关 -->
@@ -65,12 +67,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
-        </dependency>
-        
-        <!-- Spring AI OpenAI Starter -->
-        <dependency>
-            <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-openai-spring-boot-starter</artifactId>
         </dependency>
     </dependencies>
 
