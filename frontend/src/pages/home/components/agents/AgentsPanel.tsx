@@ -274,6 +274,11 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
     navigate('/agent-create');
   };
 
+  // 处理添加新Workflow
+  const handleAddWorkflow = () => {
+    window.open('http://localhost:3001', '_blank');
+  };
+
   // 处理tab切换
   const handleTabChange = (key: string) => {
     setActiveTab(key);
@@ -343,6 +348,27 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
 
     return (
       <div className="space-y-3">
+        {/* 添加Workflow按钮卡片 */}
+        <div 
+          onClick={handleAddWorkflow}
+          className="cursor-pointer transition-all duration-200 border-2 border-dashed border-gray-300 hover:border-gray-400 hover:shadow-sm rounded-lg p-3 bg-gray-50 hover:bg-gray-100"
+        >
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 rounded-lg bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors duration-200 flex-shrink-0">
+              <PlusOutlined className="text-gray-600 hover:text-gray-700 text-sm" />
+            </div>
+            <div className="flex-1">
+              <span className="text-sm text-gray-700 hover:text-gray-900 font-medium block">
+                Create New Workflow
+              </span>
+              <span className="text-xs text-gray-500">
+                Build your custom automation workflow
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        {/* 现有的workflows列表 */}
         {workflows.map((workflow) => (
           <WorkflowCard
             key={workflow.id}

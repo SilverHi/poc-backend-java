@@ -3,13 +3,107 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import CopyButton from './CopyButton';
+import TableWithCopy from './TableWithCopy';
 
 interface MarkdownRendererProps {
   content: string;
   className?: string;
 }
 
+// CSV解析和转换函数
+const parseCSVToMarkdownTable = (csvText: string): string => {
+  const lines = csvText.trim().split('\n');
+  if (lines.length < 2) return csvText; // 至少需要标题行和一行数据
+  
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      const nextChar = line[i + 1];
+      
+      if (char === '"') {
+        if (inQuotes && nextChar === '"') {
+          current += '"';
+          i++; // 跳过下一个引号
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    
+    result.push(current.trim());
+    return result;
+  };
+  
+  try {
+    const rows = lines.map(line => parseCSVLine(line));
+    
+    // 检查所有行是否有相同的列数
+    const columnCount = rows[0].length;
+    if (!rows.every(row => row.length === columnCount)) {
+      return csvText; // 如果列数不一致，不转换
+    }
+    
+    // 转换为markdown表格
+    let markdownTable = '';
+    
+    // 标题行
+    markdownTable += '| ' + rows[0].map(cell => cell.replace(/\|/g, '\\|')).join(' | ') + ' |\n';
+    
+    // 分割线
+    markdownTable += '| ' + rows[0].map(() => '---').join(' | ') + ' |\n';
+    
+    // 数据行
+    for (let i = 1; i < rows.length; i++) {
+      markdownTable += '| ' + rows[i].map(cell => cell.replace(/\|/g, '\\|')).join(' | ') + ' |\n';
+    }
+    
+    return markdownTable;
+  } catch (error) {
+    console.warn('CSV解析失败:', error);
+    return csvText;
+  }
+};
+
+// 检测并转换CSV内容
+const processContentWithCSV = (content: string): string => {
+  // 匹配可能的CSV块（简单启发式检测）
+  const csvBlockRegex = /```csv\n([\s\S]*?)```/g;
+  
+  let processedContent = content;
+  
+  // 处理```csv代码块
+  processedContent = processedContent.replace(csvBlockRegex, (match, csvContent) => {
+    console.log('找到CSV代码块:', csvContent);
+    const markdownTable = parseCSVToMarkdownTable(csvContent);
+    console.log('转换后的表格:', markdownTable);
+    return markdownTable;
+  });
+  
+  return processedContent;
+};
+
+
+
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className = '' }) => {
+  // 预处理内容，将CSV转换为markdown表格
+  const processedContent = processContentWithCSV(content);
+  
+  // 调试：打印转换前后的内容
+  if (content !== processedContent) {
+    console.log('CSV转换前:', content);
+    console.log('CSV转换后:', processedContent);
+  }
+  
   return (
     <>
       <style>{`
@@ -38,7 +132,17 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
           margin: 1rem 0;
         }
         .markdown-content table {
+          border-radius: 8px;
+        }
+        .markdown-content .table-container {
           margin: 1rem 0;
+          overflow: hidden;
+        }
+        .markdown-content th {
+          font-weight: 600;
+        }
+        .markdown-content td {
+          font-size: 14px;
         }
         .markdown-content hr {
           margin: 1.5rem 0;
@@ -58,18 +162,28 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
           code({ node, inline, className, children, ...props }) {
             const match = /language-(\w+)/.exec(className || '');
             const language = match ? match[1] : '';
+            const codeContent = String(children).replace(/\n$/, '');
             
             return !inline && language ? (
-              <SyntaxHighlighter
-                style={oneDark}
-                language={language}
-                PreTag="div"
-                className="rounded-lg"
-                customStyle={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}
-                {...props}
-              >
-                {String(children).replace(/\n$/, '')}
-              </SyntaxHighlighter>
+              <div className="relative group">
+                <div className="absolute right-2 top-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <CopyButton 
+                    text={codeContent} 
+                    tooltip={`复制${language}代码`}
+                    className="bg-gray-800 hover:bg-gray-700 text-white hover:text-white"
+                  />
+                </div>
+                <SyntaxHighlighter
+                  style={oneDark}
+                  language={language}
+                  PreTag="div"
+                  className="rounded-lg"
+                  customStyle={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}
+                  {...props}
+                >
+                  {codeContent}
+                </SyntaxHighlighter>
+              </div>
             ) : (
               <code 
                 className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono text-gray-800" 
@@ -124,35 +238,33 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
             </blockquote>
           ),
           // 表格渲染
-          table: ({ children }) => (
-            <div className="overflow-x-auto my-3">
-              <table className="min-w-full border-collapse border border-gray-300">
-                {children}
-              </table>
-            </div>
+          table: ({ children, ...props }) => (
+            <TableWithCopy {...props}>
+              {children}
+            </TableWithCopy>
           ),
           thead: ({ children }) => (
-            <thead className="bg-gray-100">
+            <thead className="bg-gray-50">
               {children}
             </thead>
           ),
           tbody: ({ children }) => (
-            <tbody>
+            <tbody className="bg-white">
               {children}
             </tbody>
           ),
           tr: ({ children }) => (
-            <tr className="border-b border-gray-200">
+            <tr className="border-b border-gray-300 hover:bg-gray-50">
               {children}
             </tr>
           ),
           th: ({ children }) => (
-            <th className="border border-gray-300 px-3 py-2 text-left font-semibold text-gray-900">
+            <th className="border border-gray-400 px-4 py-3 text-left font-semibold text-gray-900 bg-gray-100">
               {children}
             </th>
           ),
           td: ({ children }) => (
-            <td className="border border-gray-300 px-3 py-2 text-gray-800">
+            <td className="border border-gray-300 px-4 py-3 text-gray-800">
               {children}
             </td>
           ),
@@ -190,7 +302,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
           ),
         }}
       >
-        {content}
+        {processedContent}
       </ReactMarkdown>
     </div>
     </>

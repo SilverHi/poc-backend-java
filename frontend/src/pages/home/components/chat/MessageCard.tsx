@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, Typography, Tag, Space } from 'antd';
 import { UserOutlined, RobotOutlined, FileTextOutlined, ToolOutlined } from '@ant-design/icons';
 import MarkdownRenderer from '../../../../components/MarkdownRenderer';
+import CopyButton from '../../../../components/CopyButton';
 
 const { Text } = Typography;
 
@@ -145,10 +146,19 @@ const MessageCard: React.FC<MessageCardProps> = ({
                   <Text className="text-sm">正在思考...</Text>
                 </div>
               ) : (
-                <div className="bg-green-50 rounded-lg p-3 border-l-4 border-green-400">
-                  <div className="flex items-center mb-2">
-                    <RobotOutlined className="text-green-600 mr-2" />
-                    <Text className="text-sm font-medium text-gray-700">AI回复</Text>
+                <div className="bg-green-50 rounded-lg p-3 border-l-4 border-green-400 relative group">
+                  <div className="flex items-center mb-2 justify-between">
+                    <div className="flex items-center">
+                      <RobotOutlined className="text-green-600 mr-2" />
+                      <Text className="text-sm font-medium text-gray-700">AI回复</Text>
+                    </div>
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <CopyButton 
+                        text={aiResponse || ''}
+                        tooltip="复制AI回复"
+                        className="bg-white hover:bg-gray-50 border border-gray-300 shadow-sm"
+                      />
+                    </div>
                   </div>
                   <div className="text-sm text-gray-800">
                     <MarkdownRenderer content={aiResponse || ''} />

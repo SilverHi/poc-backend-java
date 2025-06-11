@@ -78,7 +78,7 @@ const ResourcePanel: React.FC<ResourcePanelProps> = ({ onDocumentSelect }) => {
       {/* 头部区域 */}
       <div className="p-8 pb-6">
         <Title level={4} className="text-gray-900 mb-3 font-medium">
-          Knowledge Base
+          Resource Library
         </Title>
         <Text className="text-gray-500 text-sm mb-6 block leading-relaxed">
           Upload and manage your document resources. Currently supports text files (.txt).
