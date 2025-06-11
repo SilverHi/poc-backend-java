@@ -18,7 +18,7 @@ const ChatArea: React.FC = () => {
     {
       id: '1',
       type: 'assistant',
-      content: '你好！我是ChatGPT，一个由OpenAI开发的AI助手。我可以帮助你回答问题、编写代码、创作内容等。有什么我可以帮助你的吗？',
+      content: '你好！我是AI助手，我可以帮助你回答问题、编写代码、创作内容等。有什么我可以帮助你的吗？',
       timestamp: new Date()
     }
   ]);
@@ -64,7 +64,7 @@ const ChatArea: React.FC = () => {
       const assistantReply: Message = {
         id: (Date.now() + 2).toString(),
         type: 'assistant',
-        content: `这是对"${newMessage.content}"的回复。在实际应用中，这里会连接到真正的AI API来生成智能回复。目前这只是一个演示界面，展示了OpenAI风格的对话体验。`,
+        content: `这是对"${newMessage.content}"的回复。在实际应用中，这里会连接到后端Java服务来生成智能回复。目前这只是一个演示界面，展示了AI助手的对话体验。`,
         timestamp: new Date()
       };
       
@@ -98,7 +98,7 @@ const ChatArea: React.FC = () => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center space-x-2 mb-2">
                   <Text className="font-medium text-gray-900">
-                    {message.type === 'user' ? '你' : 'ChatGPT'}
+                    {message.type === 'user' ? '你' : 'AI助手'}
                   </Text>
                   <Text className="text-xs text-gray-500">
                     {message.timestamp.toLocaleTimeString()}
@@ -153,7 +153,7 @@ const ChatArea: React.FC = () => {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="发送消息给ChatGPT..."
+                  placeholder="发送消息给AI助手..."
                   autoSize={{ minRows: 1, maxRows: 6 }}
                   className="border-0 resize-none focus:shadow-none"
                   style={{ 

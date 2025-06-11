@@ -15,7 +15,7 @@ public class SpringAiConfig {
 
     /**
      * 配置 ChatClient
-     * 使用 Spring AI 1.0.0 的最新 API
+     * 使用 Spring AI 1.0.0-M6 版本的 API
      */
     @Bean
     public ChatClient chatClient(ChatModel chatModel) {

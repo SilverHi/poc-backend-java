@@ -82,12 +82,6 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     // 检查是否有内容可以发送：用户输入或引用的文档
     if ((!inputValue.trim() && referencedDocuments.length === 0) || isLoading) return;
 
-    // 检查API Key是否已配置
-    if (!isApiKeyConfigured()) {
-      message.error('OpenAI API Key未配置，请在 src/openaicall/localConfig.ts 中设置您的API Key');
-      return;
-    }
-
     // 创建用户消息
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -166,32 +160,32 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         }
       }
 
-      // 步骤4: 调用OpenAI
+      // 步骤4: 调用后端AI服务
       setProcessSteps(prev => [...prev, {
         id: 'step4',
-        content: '正在调用OpenAI API...',
+        content: '正在调用后端AI服务...',
         status: 'processing',
         timestamp: new Date()
       }]);
 
-      // 构建调用参数
-      const callParams: ChatCallParams = {
-        userInput: inputValue,
-        referencedDocuments: documentsWithContent,
-        selectedAgent: agentInfo ? {
-          id: agentInfo.id,
-          name: agentInfo.name,
-          systemPrompt: agentInfo.systemPrompt || '',
-          modelName: agentInfo.modelName || 'gpt-4o-mini',
-          temperature: agentInfo.temperature,
-          maxTokens: agentInfo.maxTokens
-        } : undefined
+      // TODO: 这里将调用Java后端的AI服务API
+      // 当前临时使用模拟响应
+      await new Promise(resolve => setTimeout(resolve, 2000)); // 模拟网络延迟
+
+      const mockResponse = {
+        success: true,
+        content: `感谢您的提问！我收到了您的消息："${inputValue}"。${
+          referencedDocuments.length > 0 
+            ? `\n\n我注意到您引用了 ${referencedDocuments.length} 个文档：${referencedDocuments.map(doc => doc.name).join('、')}。` 
+            : ''
+        }${
+          selectedAgent 
+            ? `\n\n您选择使用了 ${selectedAgent.name} 来处理这个请求。`
+            : ''
+        }\n\n当前前端已经清理了直接调用OpenAI API的逻辑，等待后端Java服务实现AI功能。`
       };
 
-      // 调用OpenAI API
-      const openaiResponse = await callOpenAI(callParams);
-
-      if (openaiResponse.success && openaiResponse.content) {
+      if (mockResponse.success && mockResponse.content) {
         // 如果使用了Agent，增加调用次数
         if (agentInfo && agentInfo.id) {
           await incrementAgentCallCount(agentInfo.id);
@@ -207,17 +201,17 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         const assistantReply: ChatMessage = {
           id: (Date.now() + 2).toString(),
           type: 'assistant',
-          aiResponse: openaiResponse.content,
+          aiResponse: mockResponse.content,
           timestamp: new Date()
         };
         
         setMessages(prev => [...prev, assistantReply]);
-        setLastAiResponse(openaiResponse.content);
+        setLastAiResponse(mockResponse.content);
       } else {
         // 处理错误
         setProcessSteps(prev => [...prev, {
           id: 'error',
-          content: `调用失败: ${openaiResponse.error || '未知错误'}`,
+          content: `调用失败: ${mockResponse.content || '未知错误'}`,
           status: 'completed',
           timestamp: new Date()
         }]);
@@ -226,7 +220,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         const errorReply: ChatMessage = {
           id: (Date.now() + 2).toString(),
           type: 'assistant',
-          aiResponse: `抱歉，处理您的请求时发生了错误：${openaiResponse.error || '未知错误'}`,
+          aiResponse: `抱歉，处理您的请求时发生了错误。当前系统正在开发中，等待后端Java服务实现AI功能。`,
           timestamp: new Date()
         };
         

@@ -3,7 +3,7 @@
     "id": "1",
     "name": "产品需求文档.txt",
     "type": "txt",
-    "content": "产品需求文档\n\n1. 产品概述\n本产品是一个基于AI的智能助手平台，旨在为用户提供高效的文档处理和知识管理服务。\n\n2. 核心功能需求\n- 文档上传和管理\n- AI对话和问答\n- 知识库构建\n- 多Agent协作\n\n3. 技术架构\n- 前端：React + TypeScript\n- 后端：Java Spring Boot\n- 数据库：MySQL + Vector Database\n- AI模型：GPT-4 + 本地化模型\n\n4. 用户界面设计\n- 简洁的现代化界面\n- 响应式设计\n- OpenAI风格的交互体验\n\n5. 性能要求\n- 响应时间 < 2秒\n- 支持并发用户 > 1000\n- 文档处理速度 > 100MB/min",
+    "content": "产品需求文档\n\n1. 产品概述\n本产品是一个基于AI的智能助手平台，旨在为用户提供高效的文档处理和知识管理服务。\n\n2. 核心功能需求\n- 文档上传和管理\n- AI对话和问答\n- 知识库构建\n- 多Agent协作\n\n3. 技术架构\n- 前端：React + TypeScript\n- 后端：Java Spring Boot\n- 数据库：MySQL + Vector Database\n- AI模型：GPT-4 + 本地化模型\n\n4. 用户界面设计\n- 简洁的现代化界面\n- 响应式设计\n- AI助手风格的交互体验\n\n5. 性能要求\n- 响应时间 < 2秒\n- 支持并发用户 > 1000\n- 文档处理速度 > 100MB/min",
     "preview": "本产品是一个基于AI的智能助手平台，旨在为用户提供高效的文档处理和知识管理服务...",
     "size": "2.1 KB",
     "uploadTime": "2024-01-15",
