@@ -2,9 +2,11 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import CopyButton from './CopyButton';
 import TableWithCopy from './TableWithCopy';
+
+// @ts-ignore
+const oneDark = require('react-syntax-highlighter/dist/esm/styles/prism/one-dark');
 
 interface MarkdownRendererProps {
   content: string;
@@ -159,7 +161,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
         remarkPlugins={[remarkGfm]}
         components={{
           // 代码块渲染
-          code({ node, inline, className, children, ...props }) {
+          code({ node, inline, className, children, ...props }: any) {
             const match = /language-(\w+)/.exec(className || '');
             const language = match ? match[1] : '';
             const codeContent = String(children).replace(/\n$/, '');
@@ -179,7 +181,6 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
                   PreTag="div"
                   className="rounded-lg"
                   customStyle={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}
-                  {...props}
                 >
                   {codeContent}
                 </SyntaxHighlighter>

@@ -1,8 +1,11 @@
-import React from 'react';
-import { Card, Typography, Tag, Space } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, Typography, Tag, Space, Input, message } from 'antd';
 import { UserOutlined, RobotOutlined, FileTextOutlined, ToolOutlined, LinkOutlined, BugOutlined } from '@ant-design/icons';
 import MarkdownRenderer from '../../../../components/MarkdownRenderer';
 import CopyButton from '../../../../components/CopyButton';
+import EditButton from '../../../../components/EditButton';
+
+const { TextArea } = Input;
 
 const { Text } = Typography;
 
@@ -36,6 +39,10 @@ interface MessageCardProps {
   
   // 状态
   isTyping?: boolean;
+  
+  // 编辑功能
+  isEditable?: boolean;
+  onEditSave?: (newContent: string) => void;
 }
 
 const MessageCard: React.FC<MessageCardProps> = ({
@@ -47,12 +54,50 @@ const MessageCard: React.FC<MessageCardProps> = ({
   referencedDocuments = [],
   selectedAgent,
   aiResponse,
-  isTyping = false
+  isTyping = false,
+  isEditable = false,
+  onEditSave
 }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(aiResponse || '');
+  const [saving, setSaving] = useState(false);
+  
   const isUserMessage = type === 'user';
   const hasReferencedDocuments = referencedDocuments.length > 0;
   const hasSelectedAgent = !!selectedAgent;
   const hasPreviousAiOutput = !!previousAiOutput;
+
+  const handleStartEdit = () => {
+    setIsEditing(true);
+    setEditText(aiResponse || '');
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      if (onEditSave) {
+        await onEditSave(editText.trim()); // 保存时去除首尾空格，但允许空内容
+      }
+      setIsEditing(false);
+    } catch (error) {
+      console.error('保存失败:', error);
+      message.error('保存失败');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditText(aiResponse || '');
+  };
+
+  // 同步aiResponse变化到editText
+  useEffect(() => {
+    if (!isEditing) {
+      setEditText(aiResponse || '');
+    }
+  }, [aiResponse, isEditing]);
 
   return (
     <div className="w-full">
@@ -181,17 +226,48 @@ const MessageCard: React.FC<MessageCardProps> = ({
                       <RobotOutlined className="text-green-600 mr-2" />
                       <Text className="text-sm font-medium text-gray-700">AI回复</Text>
                     </div>
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <EditButton
+                        tooltip="编辑回复"
+                        isEditable={isEditable}
+                        isEditing={isEditing}
+                        saving={saving}
+                        onEdit={handleStartEdit}
+                        onSave={handleSave}
+                        className="bg-white hover:bg-gray-50 border border-gray-300 shadow-sm"
+                      />
                       <CopyButton 
-                        text={aiResponse || ''}
-                        tooltip="复制AI回复"
+                        text={isEditing ? editText : (aiResponse || '')}
+                        tooltip={(isEditing ? editText : (aiResponse || '')).trim() === '' ? "复制空回复" : "复制AI回复"}
                         className="bg-white hover:bg-gray-50 border border-gray-300 shadow-sm"
                       />
                     </div>
                   </div>
-                  <div className="text-sm text-gray-800">
-                    <MarkdownRenderer content={aiResponse || ''} />
-                  </div>
+                  
+                  {/* 条件渲染：编辑模式或显示模式 */}
+                  {isEditing ? (
+                    <div className="text-sm text-gray-800">
+                      <TextArea
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        onBlur={handleCancel}
+                        autoSize={{ minRows: 4, maxRows: 12 }}
+                        className="border-gray-300 focus:border-blue-500 focus:shadow-sm"
+                        placeholder="编辑AI回复内容..."
+                        autoFocus
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-800">
+                                          {(aiResponse || '').trim() === '' ? (
+                      <div className="text-gray-400 italic py-2">
+                        Empty AI response
+                      </div>
+                    ) : (
+                      <MarkdownRenderer content={aiResponse || ''} />
+                    )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

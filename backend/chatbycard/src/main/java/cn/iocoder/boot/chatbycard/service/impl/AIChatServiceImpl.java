@@ -312,14 +312,14 @@ public class AIChatServiceImpl implements AIChatService {
 
         // 添加文档内容
         if (StringUtils.hasText(documentContent)) {
-            promptBuilder.append("## 参考文档内容：\n\n")
+            promptBuilder.append("## 文档内容：\n\n")
                     .append(documentContent)
                     .append("\n\n");
         }
 
         // 添加上次AI回复（用于对话延续）
         if (StringUtils.hasText(previousAiOutput)) {
-            promptBuilder.append("## 上次对话内容：\n\n")
+            promptBuilder.append("## 对话输出：\n\n")
                     .append(previousAiOutput)
                     .append("\n\n");
         }
