@@ -280,7 +280,7 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect, onWorkflowSele
     try {
       const result = await getWorkflowFrontendUrl();
       if (result.success && result.data) {
-        window.open(result.data, '_blank');
+        window.location.href = result.data;
       } else {
         message.error(result.error || '获取跳转URL失败');
       }
