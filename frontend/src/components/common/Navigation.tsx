@@ -17,7 +17,7 @@ const Navigation: React.FC<NavigationProps> = ({ onClearConversation }) => {
           <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-lg flex items-center justify-center">
             <MessageOutlined className="text-white text-sm" />
           </div>
-          <Text className="text-lg font-semibold text-gray-800">ChatbyCard</Text>
+          <Text className="text-lg font-semibold text-gray-800">Ai Assistant</Text>
         </div>
       </div>
       

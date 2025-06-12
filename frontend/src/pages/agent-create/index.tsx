@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import { Navigation } from '../../components/common';
 import { SystemPromptPanel, AgentFormPanel, PreviewChatPanel } from './components';
-import { getAgentById, updateAgent } from '../../api';
+import { getAgentById, updateAgent, getApiConfig } from '../../api';
 
 const { Content } = Layout;
 
@@ -133,7 +133,7 @@ const AgentCreate: React.FC = () => {
         result = await updateAgent(id, requestData);
       } else {
         // 创建模式
-        const response = await fetch('http://localhost:8080/api/chatbycard/agents', {
+        const response = await fetch(`${getApiConfig().BASE_URL}/api/chatbycard/agents`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

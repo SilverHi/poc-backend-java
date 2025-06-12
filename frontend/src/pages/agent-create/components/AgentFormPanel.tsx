@@ -34,7 +34,7 @@ const AgentFormPanel: React.FC<AgentFormPanelProps> = ({
 
   // 可选的类型
   const typeOptions = [
-    { value: 'assistant', label: 'General Assistant' },
+    { value: 'assistant', label: 'General assistant' },
     { value: 'specialist', label: 'Business analyst' },
     { value: 'creative', label: 'Project manager' },
     { value: 'analytical', label: 'Project management officer' }

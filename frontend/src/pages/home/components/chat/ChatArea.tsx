@@ -7,7 +7,7 @@ import StepCard from './StepCard';
 import { StepManager, ProcessStep } from './stepsConfig';
 import { ConversationTurn, ConversationManager, ConversationState, ReferencedDocument, SelectedAgent, Workflow, WorkflowState, InputAreaState } from './types';
 
-import { getDocumentsContent, incrementAgentCallCount, aiChat } from '../../../../api';
+import { getDocumentsContent, incrementAgentCallCount, aiChat, getApiConfig } from '../../../../api';
 import type { AiChatRequest } from '../../../../api';
 
 const { TextArea } = Input;
@@ -652,7 +652,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
           
           // 获取完整的Agent信息
           try {
-            const response = await fetch(`http://localhost:8080/api/chatbycard/agents/${turn.userInput.selectedAgent.id}`);
+            const response = await fetch(`${getApiConfig().BASE_URL}/api/chatbycard/agents/${turn.userInput.selectedAgent.id}`);
             if (response.ok) {
               const result = await response.json();
               if (result.success && result.data && result.data.data) {
