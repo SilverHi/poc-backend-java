@@ -168,6 +168,41 @@ export class StepManager {
     this.onUpdate([...this.steps]);
   }
 
+  // Add workflow step with custom content
+  addWorkflowStep(stepId: string, context: { nodeName: string; nodeIndex: number; status: StepStatus }) {
+    const newStep: ProcessStep = {
+      id: stepId,
+      content: `Node ${context.nodeIndex}: Processing with ${context.nodeName}...`,
+      status: context.status,
+      timestamp: new Date()
+    };
+
+    this.steps.push(newStep);
+    this.onUpdate([...this.steps]);
+    return stepId; // 返回stepId以便后续更新
+  }
+
+  // Update workflow step status
+  updateWorkflowStep(stepId: string, status: StepStatus, content?: string) {
+    this.steps = this.steps.map(step => 
+      step.id === stepId 
+        ? { 
+            ...step, 
+            status, 
+            content: content || step.content,
+            timestamp: new Date() 
+          }
+        : step
+    );
+    this.onUpdate([...this.steps]);
+  }
+
+  // Remove specific step
+  removeStep(stepId: string) {
+    this.steps = this.steps.filter(step => step.id !== stepId);
+    this.onUpdate([...this.steps]);
+  }
+
   // Clear all steps
   clearSteps() {
     this.steps = [];

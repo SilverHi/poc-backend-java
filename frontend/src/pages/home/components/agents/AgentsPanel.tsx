@@ -100,10 +100,11 @@ const { Text, Title } = Typography;
 const { TabPane } = Tabs;
 
 interface AgentsPanelProps {
-  onAgentSelect?: (agent: Agent | Workflow | Tool) => void;
+  onAgentSelect?: (agent: Agent | Tool) => void;
+  onWorkflowSelect?: (workflow: Workflow) => void;
 }
 
-const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
+const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect, onWorkflowSelect }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string>('agents');
   const [selectedAgent, setSelectedAgent] = useState<string>('');
@@ -235,8 +236,8 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
   const handleWorkflowSelect = (workflowId: string) => {
     setSelectedWorkflow(workflowId);
     const workflow = workflows.find(w => w.id === workflowId);
-    if (workflow && onAgentSelect) {
-      onAgentSelect({ ...workflow, type: 'workflow' as any });
+    if (workflow && onWorkflowSelect) {
+      onWorkflowSelect(workflow);
     }
   };
 

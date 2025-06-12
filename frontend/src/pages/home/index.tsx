@@ -4,23 +4,9 @@ import { Navigation } from '../../components/common';
 import { ResourcePanel } from './components/resource';
 import { ChatArea } from './components/chat';
 import { AgentsPanel } from './components/agents';
+import { ReferencedDocument, SelectedAgent, Workflow } from './components/chat/types';
 
 const { Content } = Layout;
-
-// 定义接口
-interface ReferencedDocument {
-  id: string;
-  name: string;
-  type: 'pdf' | 'doc' | 'txt' | 'md' | 'external';
-  externalType?: 'confluence' | 'jira'; // 外部系统类型
-}
-
-interface SelectedAgent {
-  id: string;
-  name: string;
-  type: 'workflow' | 'tool';
-  description?: string;
-}
 
 interface ExternalSystem {
   id: string;
@@ -34,6 +20,7 @@ const Home: React.FC = () => {
   // 全局状态管理
   const [referencedDocuments, setReferencedDocuments] = useState<ReferencedDocument[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<SelectedAgent | null>(null);
+  const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
 
   // 处理添加文档引用
   const handleAddDocument = (document: any) => {
@@ -78,11 +65,31 @@ const Home: React.FC = () => {
       description: agent.description
     };
     setSelectedAgent(newAgent);
+    // 清除工作流选择
+    setSelectedWorkflow(null);
+  };
+
+  // 处理选择Workflow
+  const handleSelectWorkflow = (workflow: Workflow) => {
+    setSelectedWorkflow(workflow);
+    // 清除Agent选择
+    setSelectedAgent(null);
   };
 
   // 处理清除Agent选择
   const handleClearAgent = () => {
     setSelectedAgent(null);
+  };
+
+  // 处理清除Workflow选择
+  const handleClearWorkflow = () => {
+    setSelectedWorkflow(null);
+  };
+
+  // 处理工作流完成
+  const handleWorkflowComplete = () => {
+    // 工作流完成后可以选择保持工作流选择或清除
+    // 这里我们保持选择，让用户可以再次执行
   };
 
   return (
@@ -105,14 +112,20 @@ const Home: React.FC = () => {
           <ChatArea 
             referencedDocuments={referencedDocuments}
             selectedAgent={selectedAgent}
+            selectedWorkflow={selectedWorkflow}
             onRemoveDocument={handleRemoveDocument}
             onClearAgent={handleClearAgent}
+            onClearWorkflow={handleClearWorkflow}
+            onWorkflowComplete={handleWorkflowComplete}
           />
         </div>
         
         {/* 右侧Agents选择区 */}
         <div className="w-80 flex-shrink-0 h-full bg-white rounded-xl shadow-sm border border-gray-200">
-          <AgentsPanel onAgentSelect={handleSelectAgent} />
+          <AgentsPanel 
+            onAgentSelect={handleSelectAgent}
+            onWorkflowSelect={handleSelectWorkflow}
+          />
         </div>
       </Content>
     </Layout>

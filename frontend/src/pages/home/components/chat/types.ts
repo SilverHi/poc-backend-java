@@ -18,6 +18,45 @@ export interface SelectedAgent {
   maxTokens?: number;
 }
 
+// 工作流相关类型定义
+export interface WorkflowVariable {
+  name: string;        // 变量名
+  description: string; // 变量描述/说明
+}
+
+export interface WorkflowNode {
+  id: string;           // Agent ID，"-1"表示开始节点，"-2"表示结束节点
+  name: string;         // 节点名称
+  user_prompt: string;  // 用户提示词，可包含{{变量名}}占位符
+}
+
+export interface Workflow {
+  id: string;
+  name: string;
+  type: string;
+  icon: string;
+  description: string;
+  agents: string[];        // 关联的Agent列表
+  estimatedTime: string;   // 预估执行时间
+  category: 'workflow';
+  callCount: number;       // 调用次数
+  nodes: WorkflowNode[];   // 节点列表
+  vars: WorkflowVariable[]; // 启动变量列表
+}
+
+// 工作流执行状态
+export interface WorkflowState {
+  isExecuting: boolean;              // 是否正在执行工作流
+  currentWorkflow?: Workflow;        // 当前执行的工作流数据
+  currentNodeIndex: number;          // 当前执行的节点索引
+  formValues: Record<string, string>; // 用户填写的表单值 (变量名 -> 值)
+  shouldStop: boolean;               // 是否应该停止执行
+  lastAgentResponse?: string;        // 上一个Agent的回复内容
+}
+
+// 输入区域状态
+export type InputAreaState = 'normal' | 'form' | 'executing';
+
 export interface ProcessStep {
   id: string;
   content: string;
@@ -37,6 +76,12 @@ export interface ConversationTurn {
     referencedDocuments?: ReferencedDocument[];
     selectedAgent?: SelectedAgent;
     previousAiOutput?: string;   // 延续对话时的上一次AI输出
+    workflowFormData?: Record<string, string>; // 工作流表单数据
+    workflowInfo?: {             // 工作流信息
+      id: string;
+      name: string;
+      description: string;
+    };
   };
   
   // AI回复部分

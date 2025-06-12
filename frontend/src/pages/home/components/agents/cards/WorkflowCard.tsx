@@ -9,9 +9,9 @@ interface WorkflowVariable {
 }
 
 interface WorkflowNode {
-  agentid: string;
+  id: string;
   name: string;
-  userprompt: string;
+  user_prompt: string;
 }
 
 interface Workflow {
@@ -120,8 +120,7 @@ const WorkflowCard: React.FC<WorkflowCardProps> = ({
                     {workflow.vars.map((variable, index) => (
                       <div key={index} className="bg-gray-50 p-2 rounded text-xs">
                         <div className="flex items-center space-x-2 mb-1">
-                          <span className="text-blue-600 font-medium">{variable.name}</span>
-                          <Tag color="blue">Variable</Tag>
+                          <span className="text-blue-600 font-medium">{variable.name}</span>                      
                         </div>
                         <Text className="text-gray-500">{variable.description}</Text>
                       </div>

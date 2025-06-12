@@ -40,9 +40,9 @@ export interface WorkflowVariable {
 }
 
 export interface WorkflowNode {
-  agentid: string;
+  id: string;
   name: string;
-  userprompt: string;
+  user_prompt: string;
 }
 
 export interface Workflow {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Typography, Tag, Space, Input, message } from 'antd';
-import { UserOutlined, RobotOutlined, FileTextOutlined, ToolOutlined, LinkOutlined, BugOutlined } from '@ant-design/icons';
+import { UserOutlined, RobotOutlined, FileTextOutlined, ToolOutlined, LinkOutlined, BugOutlined, ApartmentOutlined } from '@ant-design/icons';
 import MarkdownRenderer from '../../../../components/MarkdownRenderer';
 import CopyButton from '../../../../components/CopyButton';
 import EditButton from '../../../../components/EditButton';
@@ -33,6 +33,12 @@ interface MessageCardProps {
   previousAiOutput?: string;
   referencedDocuments?: ReferencedDocument[];
   selectedAgent?: SelectedAgent;
+  workflowFormData?: Record<string, string>;
+  workflowInfo?: {
+    id: string;
+    name: string;
+    description: string;
+  };
   
   // AI回复相关
   aiResponse?: string;
@@ -53,6 +59,8 @@ const MessageCard: React.FC<MessageCardProps> = ({
   previousAiOutput,
   referencedDocuments = [],
   selectedAgent,
+  workflowFormData,
+  workflowInfo,
   aiResponse,
   isTyping = false,
   isEditable = false,
@@ -183,6 +191,41 @@ const MessageCard: React.FC<MessageCardProps> = ({
                       );
                     })}
                   </Space>
+                </div>
+              )}
+
+              {/* 工作流表单数据 */}
+              {workflowFormData && Object.keys(workflowFormData).length > 0 && (
+                <div className="bg-indigo-50 rounded-lg p-3 border-l-4 border-indigo-400">
+                  <div className="flex items-center mb-2">
+                    <ApartmentOutlined className="text-indigo-600 mr-2" />
+                    <Text className="text-sm font-medium text-gray-700">Workflow Form Data</Text>
+                  </div>
+                  <div className="space-y-2">
+                    {Object.entries(workflowFormData).map(([key, value]) => (
+                      <div key={key} className="bg-white rounded p-2 border border-indigo-100">
+                        <Text className="text-xs font-medium text-indigo-600 block">{key}:</Text>
+                        <Text className="text-sm text-gray-800">{value}</Text>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 工作流信息 */}
+              {workflowInfo && (
+                <div className="bg-violet-50 rounded-lg p-3 border-l-4 border-violet-400">
+                  <div className="flex items-center mb-2">
+                    <ApartmentOutlined className="text-violet-600 mr-2" />
+                    <Text className="text-sm font-medium text-gray-700">Workflow</Text>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Tag color="violet">Workflow</Tag>
+                    <Text className="text-sm font-medium text-gray-800">{workflowInfo.name}</Text>
+                    {workflowInfo.description && (
+                      <Text className="text-xs text-gray-600">• {workflowInfo.description}</Text>
+                    )}
+                  </div>
                 </div>
               )}
 
