@@ -1,35 +1,79 @@
-// 导入类型定义
-import type { Document, DocumentUploadResponse, ApiResponse } from '../mock/mockApi';
-import type { Agent, Workflow, Tool } from '../mock/agentsMockApi';
+// 类型定义
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
 
-// 导入mock API（开发时使用）
-import {
-  mockGetDocuments,
-  mockGetDocumentById,
-  mockGetDocumentsByIds,
-  mockSearchDocuments,
-  mockUploadDocument,
-  mockDeleteDocument,
-  mockGetDocumentContent,
-  mockGetDocumentsContent,
-} from '../mock/mockApi';
+export interface Document {
+  id: string;
+  name: string;
+  type: 'txt';
+  content: string;
+  preview: string;
+  size: string;
+  uploadTime: string;
+  status: 'ready';
+}
 
-import {
-  mockGetAgents,
-  mockGetWorkflows,
-  mockGetTools,
-  mockGetAgentById,
-  mockGetWorkflowById,
-  mockGetToolById,
-  mockSearchAgents,
-  mockExecuteWorkflow,
-  mockExecuteTool,
-} from '../mock/agentsMockApi';
+export interface DocumentUploadResponse {
+  success: boolean;
+  document?: Document;
+  error?: string;
+}
+
+export interface Agent {
+  id: string;
+  name: string;
+  type: string;
+  icon: string;
+  description: string;
+  model: string;
+  capability: string[];
+  category: 'agent';
+  callCount: number;
+}
+
+export interface WorkflowVariable {
+  name: string;
+  description: string;
+}
+
+export interface WorkflowNode {
+  agentid: string;
+  name: string;
+  userprompt: string;
+}
+
+export interface Workflow {
+  id: string;
+  name: string;
+  type: string;
+  icon: string;
+  description: string;
+  agents: string[];
+  estimatedTime: string;
+  category: 'workflow';
+  callCount: number;
+  nodes: WorkflowNode[];
+  vars: WorkflowVariable[];
+}
+
+export interface Tool {
+  id: string;
+  name: string;
+  type: string;
+  icon: string;
+  description: string;
+  features: string[];
+  compatibility: string[];
+  category: 'tool';
+  callCount: number;
+}
 
 // API配置
 const API_CONFIG = {
   BASE_URL: 'http://localhost:8080',
-  USE_MOCK: false, // 改为使用真实后端API
   TIMEOUT: 10000,
 };
 
@@ -260,66 +304,59 @@ const realGetDocumentsContent = async (ids: string[]): Promise<ApiResponse<Recor
  * 获取所有文档
  */
 export const getDocuments = async (): Promise<ApiResponse<Document[]>> => {
-  return API_CONFIG.USE_MOCK ? mockGetDocuments() : realGetDocuments();
+  return realGetDocuments();
 };
 
 /**
  * 根据ID获取文档
  */
 export const getDocumentById = async (id: string): Promise<ApiResponse<Document | null>> => {
-  return API_CONFIG.USE_MOCK ? mockGetDocumentById(id) : realGetDocumentById(id);
+  return realGetDocumentById(id);
 };
 
 /**
  * 根据IDs获取多个文档（为agents提供）
  */
 export const getDocumentsByIds = async (ids: string[]): Promise<ApiResponse<Document[]>> => {
-  return API_CONFIG.USE_MOCK ? mockGetDocumentsByIds(ids) : realGetDocumentsByIds(ids);
+  return realGetDocumentsByIds(ids);
 };
 
 /**
  * 搜索文档
  */
 export const searchDocuments = async (query: string): Promise<ApiResponse<Document[]>> => {
-  return API_CONFIG.USE_MOCK ? mockSearchDocuments(query) : realSearchDocuments(query);
+  return realSearchDocuments(query);
 };
 
 /**
  * 上传文档
  */
 export const uploadDocument = async (file: File): Promise<DocumentUploadResponse> => {
-  return API_CONFIG.USE_MOCK ? mockUploadDocument(file) : realUploadDocument(file);
+  return realUploadDocument(file);
 };
 
 /**
  * 删除文档
  */
 export const deleteDocument = async (id: string): Promise<ApiResponse<boolean>> => {
-  return API_CONFIG.USE_MOCK ? mockDeleteDocument(id) : realDeleteDocument(id);
+  return realDeleteDocument(id);
 };
 
 /**
  * 获取文档内容（为AI对话提供）
  */
 export const getDocumentContent = async (id: string): Promise<ApiResponse<string | null>> => {
-  return API_CONFIG.USE_MOCK ? mockGetDocumentContent(id) : realGetDocumentContent(id);
+  return realGetDocumentContent(id);
 };
 
 /**
  * 批量获取文档内容（为agents提供）
  */
 export const getDocumentsContent = async (ids: string[]): Promise<ApiResponse<Record<string, string>>> => {
-  return API_CONFIG.USE_MOCK ? mockGetDocumentsContent(ids) : realGetDocumentsContent(ids);
+  return realGetDocumentsContent(ids);
 };
 
 // ==================== 配置管理 ====================
-
-/**
- * 切换API模式（mock/real）
- */
-export const setUseMock = (useMock: boolean) => {
-  (API_CONFIG as any).USE_MOCK = useMock;
-};
 
 /**
  * 获取当前API配置
@@ -360,11 +397,12 @@ const convertExternalWorkflowToFrontend = (workflow: any): Workflow => {
     type: workflow.type || 'automation',
     icon: 'workflow',
     description: workflow.description || 'No description',
-    steps: workflow.steps || [],
     agents: workflow.agents || [],
-    estimatedTime: workflow.estimatedTime || '1-2分钟',
+    estimatedTime: workflow.estimatedTime || '1-2 minutes',
     category: 'workflow' as const,
-    callCount: workflow.callCount || 0
+    callCount: workflow.callCount || 0,
+    nodes: workflow.nodes || [],
+    vars: workflow.vars || []
   };
 };
 
@@ -491,66 +529,62 @@ const realGetWorkflows = async (): Promise<ApiResponse<Workflow[]>> => {
  * 获取所有Agents
  */
 export const getAgents = async (): Promise<ApiResponse<Agent[]>> => {
-  return API_CONFIG.USE_MOCK ? mockGetAgents() : realGetAgents();
+  return realGetAgents();
 };
 
 /**
  * 获取所有Workflows
  */
 export const getWorkflows = async (): Promise<ApiResponse<Workflow[]>> => {
-  return API_CONFIG.USE_MOCK ? mockGetWorkflows() : realGetWorkflows();
+  return realGetWorkflows();
 };
 
 /**
  * 获取所有Tools
  */
 export const getTools = async (): Promise<ApiResponse<Tool[]>> => {
-  return API_CONFIG.USE_MOCK ? mockGetTools() : httpRequest<Tool[]>('/api/tools');
+  return httpRequest<Tool[]>('/api/tools');
 };
 
 /**
  * 根据ID获取Agent
  */
 export const getAgentById = async (id: string): Promise<ApiResponse<Agent | null>> => {
-  return API_CONFIG.USE_MOCK ? mockGetAgentById(id) : realGetAgentById(id);
+  return realGetAgentById(id);
 };
 
 /**
  * 根据ID获取Workflow
  */
 export const getWorkflowById = async (id: string): Promise<ApiResponse<Workflow | null>> => {
-  return API_CONFIG.USE_MOCK ? mockGetWorkflowById(id) : httpRequest<Workflow>(`/api/workflows/${id}`);
+  return httpRequest<Workflow>(`/api/workflows/${id}`);
 };
 
 /**
  * 根据ID获取Tool
  */
 export const getToolById = async (id: string): Promise<ApiResponse<Tool | null>> => {
-  return API_CONFIG.USE_MOCK ? mockGetToolById(id) : httpRequest<Tool>(`/api/tools/${id}`);
+  return httpRequest<Tool>(`/api/tools/${id}`);
 };
 
 /**
  * 搜索Agents
  */
 export const searchAgents = async (query: string): Promise<ApiResponse<Agent[]>> => {
-  return API_CONFIG.USE_MOCK ? mockSearchAgents(query) : realSearchAgents(query);
+  return realSearchAgents(query);
 };
 
 /**
  * 增加代理调用次数
  */
 export const incrementAgentCallCount = async (id: string): Promise<ApiResponse<boolean>> => {
-  return API_CONFIG.USE_MOCK ? { success: true, data: true } : realIncrementAgentCallCount(id);
+  return realIncrementAgentCallCount(id);
 };
 
 /**
  * 执行Workflow
  */
 export const executeWorkflow = async (workflowId: string, params?: any): Promise<ApiResponse<{ jobId: string; status: string }>> => {
-  if (API_CONFIG.USE_MOCK) {
-    return mockExecuteWorkflow(workflowId, params);
-  }
-  
   return httpRequest<{ jobId: string; status: string }>('/api/workflows/execute', {
     method: 'POST',
     body: JSON.stringify({ workflowId, params }),
@@ -561,10 +595,6 @@ export const executeWorkflow = async (workflowId: string, params?: any): Promise
  * 使用Tool
  */
 export const executeTool = async (toolId: string, params?: any): Promise<ApiResponse<{ result: string; status: string }>> => {
-  if (API_CONFIG.USE_MOCK) {
-    return mockExecuteTool(toolId, params);
-  }
-  
   return httpRequest<{ result: string; status: string }>('/api/tools/execute', {
     method: 'POST',
     body: JSON.stringify({ toolId, params }),
@@ -717,5 +747,4 @@ export const aiChatStream = async (
   }
 };
 
-// 导出类型
-export type { Document, DocumentUploadResponse, ApiResponse, Agent, Workflow, Tool }; 
+ 

@@ -11,7 +11,8 @@ const { Content } = Layout;
 interface ReferencedDocument {
   id: string;
   name: string;
-  type: 'pdf' | 'doc' | 'txt' | 'md';
+  type: 'pdf' | 'doc' | 'txt' | 'md' | 'external';
+  externalType?: 'confluence' | 'jira'; // 外部系统类型
 }
 
 interface SelectedAgent {
@@ -19,6 +20,14 @@ interface SelectedAgent {
   name: string;
   type: 'workflow' | 'tool';
   description?: string;
+}
+
+interface ExternalSystem {
+  id: string;
+  name: string;
+  type: 'confluence' | 'jira';
+  description: string;
+  url?: string;
 }
 
 const Home: React.FC = () => {
@@ -32,6 +41,21 @@ const Home: React.FC = () => {
       id: document.id,
       name: document.name || document.title,
       type: document.type || 'txt'
+    };
+    
+    // 检查是否已经添加过
+    if (!referencedDocuments.find(doc => doc.id === newDoc.id)) {
+      setReferencedDocuments(prev => [...prev, newDoc]);
+    }
+  };
+
+  // 处理添加外部系统引用
+  const handleAddExternalSystem = (system: ExternalSystem) => {
+    const newDoc: ReferencedDocument = {
+      id: system.id,
+      name: system.name,
+      type: 'external',
+      externalType: system.type
     };
     
     // 检查是否已经添加过
@@ -70,7 +94,10 @@ const Home: React.FC = () => {
       <Content className="flex h-[calc(100vh-64px)] overflow-hidden gap-6 p-6">
         {/* 左侧资源选择区 */}
         <div className="w-80 flex-shrink-0 h-full bg-white rounded-xl shadow-sm border border-gray-200">
-          <ResourcePanel onDocumentSelect={handleAddDocument} />
+          <ResourcePanel 
+            onDocumentSelect={handleAddDocument}
+            onExternalSystemSelect={handleAddExternalSystem}
+          />
         </div>
         
         {/* 中间对话区 */}

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Input, Button, Typography, Card, Tag, Space, message } from 'antd';
-import { SendOutlined, PaperClipOutlined, AudioOutlined, CloseOutlined, FileTextOutlined, ToolOutlined } from '@ant-design/icons';
+import { SendOutlined, PaperClipOutlined, AudioOutlined, CloseOutlined, FileTextOutlined, ToolOutlined, LinkOutlined, BugOutlined } from '@ant-design/icons';
 import MessageCard from './MessageCard';
 import StepCard from './StepCard';
 
@@ -36,7 +36,8 @@ interface ProcessStep {
 interface ReferencedDocument {
   id: string;
   name: string;
-  type: 'pdf' | 'doc' | 'txt' | 'md';
+  type: 'pdf' | 'doc' | 'txt' | 'md' | 'external';
+  externalType?: 'confluence' | 'jira'; // 外部系统类型
 }
 
 interface SelectedAgent {
@@ -108,9 +109,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         timestamp: new Date()
       }]);
 
-      // 步骤2: 准备文档内容 (如果有引用文档)
+      // 步骤2: 准备文档内容 (如果有引用文档，但排除外部系统引用)
       let documentsWithContent: Array<{id: string, name: string, content: string}> = [];
-      if (referencedDocuments.length > 0) {
+      const actualDocuments = referencedDocuments.filter(doc => doc.type !== 'external');
+      
+      if (actualDocuments.length > 0) {
         setProcessSteps(prev => [...prev, {
           id: 'step2',
           content: 'Retrieving referenced document content...',
@@ -118,11 +121,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({
           timestamp: new Date()
         }]);
 
-        const documentIds = referencedDocuments.map(doc => doc.id);
+        const documentIds = actualDocuments.map(doc => doc.id);
         const documentsContentResponse = await getDocumentsContent(documentIds);
         
         if (documentsContentResponse.success && documentsContentResponse.data) {
-          documentsWithContent = referencedDocuments.map(doc => ({
+          documentsWithContent = actualDocuments.map(doc => ({
             id: doc.id,
             name: doc.name,
             content: documentsContentResponse.data![doc.id] || '无法获取文档内容'
@@ -169,10 +172,10 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         timestamp: new Date()
       }]);
 
-      // 准备AI聊天请求数据
+      // 准备AI聊天请求数据 (外部系统引用不传递给API)
       const aiChatRequest: AiChatRequest = {
         agentId: agentInfo?.id || undefined,
-        documentIds: referencedDocuments.length > 0 ? referencedDocuments.map(doc => doc.id) : undefined,
+        documentIds: actualDocuments.length > 0 ? actualDocuments.map(doc => doc.id) : undefined,
         userInput: inputValue || undefined,
         previousAiOutput: lastAiResponse || undefined,
       };
@@ -373,17 +376,45 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                   <Text className="text-sm text-gray-600 font-medium">Referenced Documents</Text>
                 </div>
                 <Space wrap>
-                  {referencedDocuments.map((doc) => (
-                    <Tag
-                      key={doc.id}
-                      closable
-                      onClose={() => removeReferencedDocument(doc.id)}
-                      className="flex items-center space-x-1 px-2 py-1 bg-white border border-gray-300"
-                    >
-                      <FileTextOutlined className="text-gray-500" />
-                      <span className="text-sm">{doc.name}</span>
-                    </Tag>
-                  ))}
+                  {referencedDocuments.map((doc) => {
+                    const getDocIcon = (doc: ReferencedDocument) => {
+                      if (doc.type === 'external') {
+                        switch (doc.externalType) {
+                          case 'confluence':
+                            return <FileTextOutlined className="text-blue-500" />;
+                          case 'jira':
+                            return <BugOutlined className="text-blue-500" />;
+                          default:
+                            return <LinkOutlined className="text-blue-500" />;
+                        }
+                      }
+                      return <FileTextOutlined className="text-gray-500" />;
+                    };
+
+                    const getTagClass = (doc: ReferencedDocument) => {
+                      if (doc.type === 'external') {
+                        return "flex items-center space-x-1 px-2 py-1 bg-blue-50 border border-blue-300";
+                      }
+                      return "flex items-center space-x-1 px-2 py-1 bg-white border border-gray-300";
+                    };
+
+                    return (
+                      <Tag
+                        key={doc.id}
+                        closable
+                        onClose={() => removeReferencedDocument(doc.id)}
+                        className={getTagClass(doc)}
+                      >
+                        {getDocIcon(doc)}
+                        <span className="text-sm">{doc.name}</span>
+                        {doc.type === 'external' && (
+                          <span className="text-xs opacity-75 ml-1">
+                            ({doc.externalType?.toUpperCase()})
+                          </span>
+                        )}
+                      </Tag>
+                    );
+                  })}
                 </Space>
               </div>
             )}

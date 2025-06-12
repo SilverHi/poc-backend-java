@@ -3,17 +3,29 @@ import { Card, Avatar, Tag, Typography } from 'antd';
 
 const { Text } = Typography;
 
+interface WorkflowVariable {
+  name: string;
+  description: string;
+}
+
+interface WorkflowNode {
+  agentid: string;
+  name: string;
+  userprompt: string;
+}
+
 interface Workflow {
   id: string;
   name: string;
   type: string;
   icon: string;
   description: string;
-  steps: string[];
   agents: string[];
   estimatedTime: string;
   category: string;
   callCount: number;
+  nodes: WorkflowNode[];
+  vars: WorkflowVariable[];
 }
 
 interface WorkflowCardProps {
@@ -69,7 +81,7 @@ const WorkflowCard: React.FC<WorkflowCardProps> = ({
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center space-x-1">
               <span className="text-xs text-green-600 font-medium">
-                执行 {formatCallCount(workflow.callCount)} 次
+                Executed {formatCallCount(workflow.callCount)} times
               </span>
             </div>
             <Text className="text-xs text-gray-400">
@@ -79,29 +91,60 @@ const WorkflowCard: React.FC<WorkflowCardProps> = ({
         
           {isSelected && (
             <div className="mt-2 pt-2 border-t border-gray-200">
-              <Text className="text-xs text-gray-600 block mb-1">
-                执行步骤：
-              </Text>
-              <div className="space-y-1 mb-2">
-                {workflow.steps.map((step, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <span className="w-4 h-4 bg-green-100 text-green-600 rounded-full text-xs flex items-center justify-center">
-                      {index + 1}
-                    </span>
-                    <Text className="text-xs text-gray-600">{step}</Text>
+              {/* Execution Steps - only show nodes if available */}
+              {workflow.nodes && workflow.nodes.length > 0 && (
+                <div className="mb-2">
+                  <Text className="text-xs text-gray-600 block mb-1">
+                    Execution Steps:
+                  </Text>
+                  <div className="space-y-1 mb-2">
+                    {workflow.nodes.map((node, index) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        <span className="w-4 h-4 bg-blue-100 text-blue-600 rounded-full text-xs flex items-center justify-center">
+                          {index + 1}
+                        </span>
+                        <Text className="text-xs text-gray-600">{node.name}</Text>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              <Text className="text-xs text-gray-600 block mb-1">
-                关联Agent：
-              </Text>
-              <div className="flex flex-wrap gap-1">
-                {workflow.agents.map((agent, index) => (
-                  <Tag key={index} color="green" className="text-xs">
-                    {agent}
-                  </Tag>
-                ))}
-              </div>
+                </div>
+              )}
+
+              {/* Variables List */}
+              {workflow.vars && workflow.vars.length > 0 && (
+                <div className="mb-2">
+                  <Text className="text-xs text-gray-600 block mb-1">
+                    Input Variables:
+                  </Text>
+                  <div className="space-y-1 mb-2">
+                    {workflow.vars.map((variable, index) => (
+                      <div key={index} className="bg-gray-50 p-2 rounded text-xs">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <span className="text-blue-600 font-medium">{variable.name}</span>
+                          <Tag color="blue">Variable</Tag>
+                        </div>
+                        <Text className="text-gray-500">{variable.description}</Text>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Associated Agents */}
+              {workflow.agents && workflow.agents.length > 0 && (
+                <div>
+                  <Text className="text-xs text-gray-600 block mb-1">
+                    Associated Agents:
+                  </Text>
+                  <div className="flex flex-wrap gap-1">
+                    {workflow.agents.map((agent, index) => (
+                      <Tag key={index} color="green" className="text-xs">
+                        {agent}
+                      </Tag>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

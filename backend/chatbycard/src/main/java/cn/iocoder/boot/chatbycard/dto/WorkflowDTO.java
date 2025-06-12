@@ -40,11 +40,6 @@ public class WorkflowDTO {
     private String description;
 
     /**
-     * 工作流步骤
-     */
-    private List<String> steps;
-
-    /**
      * 关联的代理
      */
     private List<String> agents;
@@ -77,6 +72,16 @@ public class WorkflowDTO {
     private String config;
 
     /**
+     * 节点列表
+     */
+    private List<WorkflowNode> nodes;
+
+    /**
+     * 变量列表
+     */
+    private List<WorkflowVariable> vars;
+
+    /**
      * 创建时间
      */
     @JsonProperty("created_at")
@@ -89,4 +94,41 @@ public class WorkflowDTO {
     @JsonProperty("updated_at")
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime updatedAt;
+
+    /**
+     * 工作流节点
+     */
+    @Data
+    public static class WorkflowNode {
+        /**
+         * 代理ID
+         */
+        private String agentid;
+
+        /**
+         * 节点名称
+         */
+        private String name;
+
+        /**
+         * 用户提示
+         */
+        private String userprompt;
+    }
+
+    /**
+     * 工作流变量
+     */
+    @Data
+    public static class WorkflowVariable {
+        /**
+         * 变量名
+         */
+        private String name;
+
+        /**
+         * 变量描述
+         */
+        private String description;
+    }
 } 

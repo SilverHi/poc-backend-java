@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Typography, Tag, Space } from 'antd';
-import { UserOutlined, RobotOutlined, FileTextOutlined, ToolOutlined } from '@ant-design/icons';
+import { UserOutlined, RobotOutlined, FileTextOutlined, ToolOutlined, LinkOutlined, BugOutlined } from '@ant-design/icons';
 import MarkdownRenderer from '../../../../components/MarkdownRenderer';
 import CopyButton from '../../../../components/CopyButton';
 
@@ -9,7 +9,8 @@ const { Text } = Typography;
 interface ReferencedDocument {
   id: string;
   name: string;
-  type: 'pdf' | 'doc' | 'txt' | 'md';
+  type: 'pdf' | 'doc' | 'txt' | 'md' | 'external';
+  externalType?: 'confluence' | 'jira'; // 外部系统类型
 }
 
 interface SelectedAgent {
@@ -99,15 +100,43 @@ const MessageCard: React.FC<MessageCardProps> = ({
                     <Text className="text-sm font-medium text-gray-700">引用文档</Text>
                   </div>
                   <Space wrap>
-                    {referencedDocuments.map((doc) => (
-                      <Tag
-                        key={doc.id}
-                        className="bg-white border border-orange-300 text-orange-700"
-                      >
-                        <FileTextOutlined className="mr-1" />
-                        {doc.name}
-                      </Tag>
-                    ))}
+                    {referencedDocuments.map((doc) => {
+                      const getDocIcon = (doc: ReferencedDocument) => {
+                        if (doc.type === 'external') {
+                          switch (doc.externalType) {
+                            case 'confluence':
+                              return <FileTextOutlined className="mr-1" />;
+                            case 'jira':
+                              return <BugOutlined className="mr-1" />;
+                            default:
+                              return <LinkOutlined className="mr-1" />;
+                          }
+                        }
+                        return <FileTextOutlined className="mr-1" />;
+                      };
+
+                      const getTagColor = (doc: ReferencedDocument) => {
+                        if (doc.type === 'external') {
+                          return "bg-white border border-blue-300 text-blue-700";
+                        }
+                        return "bg-white border border-orange-300 text-orange-700";
+                      };
+
+                      return (
+                        <Tag
+                          key={doc.id}
+                          className={getTagColor(doc)}
+                        >
+                          {getDocIcon(doc)}
+                          {doc.name}
+                          {doc.type === 'external' && (
+                            <span className="ml-1 text-xs opacity-75">
+                              ({doc.externalType?.toUpperCase()})
+                            </span>
+                          )}
+                        </Tag>
+                      );
+                    })}
                   </Space>
                 </div>
               )}

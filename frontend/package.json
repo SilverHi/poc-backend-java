@@ -8,6 +8,7 @@
     "@testing-library/user-event": "^13.5.0",
     "@types/react-router-dom": "^5.3.3",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "ajv": "^8.17.1",
     "antd": "^5.12.1",
     "axios": "^1.6.2",
     "react": "^18.2.0",

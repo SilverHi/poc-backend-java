@@ -134,10 +134,44 @@ public class WorkflowServiceImpl implements WorkflowService {
             dto.setIcon("workflow");
             dto.setCategory("workflow");
             dto.setCallCount(0);
-            dto.setEstimatedTime("1-2分钟");
+            dto.setEstimatedTime("1-2 minutes");
             
-            // 默认步骤和代理
-            dto.setSteps(Arrays.asList("初始化", "执行", "完成"));
+            // 处理变量数据 - 先处理变量，因为节点的 userprompt 需要引用变量
+            List<WorkflowDTO.WorkflowVariable> vars = new ArrayList<>();
+            if (node.has("vars") && node.get("vars").isArray()) {
+                for (JsonNode varNode : node.get("vars")) {
+                    WorkflowDTO.WorkflowVariable var = new WorkflowDTO.WorkflowVariable();
+                    var.setName(varNode.has("name") ? varNode.get("name").asText() : "");
+                    var.setDescription(varNode.has("description") ? varNode.get("description").asText() : "");
+                    vars.add(var);
+                }
+            }
+            dto.setVars(vars);
+            
+            // 处理节点数据 - 转换为包含 agentid、name、userprompt 的对象
+            List<WorkflowDTO.WorkflowNode> workflowNodes = new ArrayList<>();
+            if (node.has("nodes") && node.get("nodes").isArray()) {
+                int nodeIndex = 0;
+                for (JsonNode nodeItem : node.get("nodes")) {
+                    WorkflowDTO.WorkflowNode workflowNode = new WorkflowDTO.WorkflowNode();
+                    
+                    // name 从外部API获取
+                    workflowNode.setName(nodeItem.asText());
+                    
+                    // agentid 生成虚假数据
+                    workflowNode.setAgentid("agent_" + String.format("%03d", nodeIndex + 1));
+                    
+                    // userprompt 生成虚假数据，包含变量引用
+                    String userPrompt = generateUserPrompt(workflowNode.getName(), vars, nodeIndex);
+                    workflowNode.setUserprompt(userPrompt);
+                    
+                    workflowNodes.add(workflowNode);
+                    nodeIndex++;
+                }
+            }
+            dto.setNodes(workflowNodes);
+            
+            // 默认代理
             dto.setAgents(Arrays.asList("System Agent"));
             
             // 时间字段
@@ -165,5 +199,31 @@ public class WorkflowServiceImpl implements WorkflowService {
             log.error("转换工作流数据失败: {}", e.getMessage(), e);
             return null;
         }
+    }
+
+    /**
+     * 生成用户提示的虚假数据
+     */
+    private String generateUserPrompt(String nodeName, List<WorkflowDTO.WorkflowVariable> vars, int nodeIndex) {
+        String[] promptTemplates = {
+            "Please process the input data using \"${var}\" and generate a comprehensive analysis report.",
+            "Execute the task with parameters \"${var}\" and ensure all requirements are met.",
+            "Analyze the provided \"${var}\" and create a detailed summary of findings.",
+            "Process the workflow step using \"${var}\" as the primary input parameter.",
+            "Generate output based on \"${var}\" and validate the results against expected criteria."
+        };
+        
+        String template = promptTemplates[nodeIndex % promptTemplates.length];
+        
+        // 如果有变量，随机选择一个变量替换到模板中
+        if (!vars.isEmpty()) {
+            WorkflowDTO.WorkflowVariable randomVar = vars.get(nodeIndex % vars.size());
+            template = template.replace("${var}", randomVar.getName());
+        } else {
+            // 如果没有变量，使用默认的变量名
+            template = template.replace("${var}", "input_data");
+        }
+        
+        return template;
     }
 } 
