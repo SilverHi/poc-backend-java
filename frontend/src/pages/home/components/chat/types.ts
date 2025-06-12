@@ -62,6 +62,8 @@ export interface ProcessStep {
   content: string;
   status: 'waiting' | 'processing' | 'completed' | 'error';
   timestamp: Date;
+  retryData?: any; // 重试所需的数据
+  retryCount?: number; // 重试次数
 }
 
 // 新的统一对话回合结构

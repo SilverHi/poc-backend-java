@@ -22,6 +22,17 @@ const Home: React.FC = () => {
   const [selectedAgent, setSelectedAgent] = useState<SelectedAgent | null>(null);
   const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
 
+  // 清空对话
+  const handleClearConversation = () => {
+    setReferencedDocuments([]);
+    setSelectedAgent(null);
+    setSelectedWorkflow(null);
+    // 调用ChatArea内部的清空逻辑
+    if ((window as any).clearChatAreaConversation) {
+      (window as any).clearChatAreaConversation();
+    }
+  };
+
   // 处理添加文档引用
   const handleAddDocument = (document: any) => {
     const newDoc: ReferencedDocument = {
@@ -95,7 +106,7 @@ const Home: React.FC = () => {
   return (
     <Layout className="h-screen overflow-hidden bg-gray-50">
       {/* 导航栏 */}
-      <Navigation />
+      <Navigation onClearConversation={handleClearConversation} />
       
       {/* 主要内容区域 */}
       <Content className="flex h-[calc(100vh-64px)] overflow-hidden gap-6 p-6">
@@ -117,6 +128,7 @@ const Home: React.FC = () => {
             onClearAgent={handleClearAgent}
             onClearWorkflow={handleClearWorkflow}
             onWorkflowComplete={handleWorkflowComplete}
+            onClearConversation={handleClearConversation}
           />
         </div>
         

@@ -21,6 +21,7 @@ interface ChatAreaProps {
   onClearAgent?: () => void;
   onWorkflowComplete?: () => void;
   onClearWorkflow?: () => void;
+  onClearConversation?: () => void;
 }
 
 const ChatArea: React.FC<ChatAreaProps> = ({
@@ -30,7 +31,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   onRemoveDocument,
   onClearAgent,
   onWorkflowComplete,
-  onClearWorkflow
+  onClearWorkflow,
+  onClearConversation
 }) => {
   // 新的对话回合状态管理
   const [conversationState, setConversationState] = useState<ConversationState>({
@@ -62,6 +64,35 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     stepManagerRef.current = new StepManager((steps) => {
       setProcessSteps(steps);
     });
+  }, []);
+
+  // 清空对话函数
+  const clearConversation = () => {
+    setConversationState({
+      turns: [],
+      currentTurnId: undefined
+    });
+    setWorkflowState({
+      isExecuting: false,
+      currentNodeIndex: 0,
+      formValues: {},
+      shouldStop: false
+    });
+    setInputAreaState('normal');
+    setProcessSteps([]);
+    setInputValue('');
+    setIsLoading(false);
+    stepManagerRef.current?.clearSteps();
+  };
+
+  // 暴露清空函数给父组件
+  useEffect(() => {
+    // 将清空函数挂载到全局，供父组件调用
+    (window as any).clearChatAreaConversation = clearConversation;
+    
+    return () => {
+      delete (window as any).clearChatAreaConversation;
+    };
   }, []);
 
   const scrollToBottom = () => {
@@ -304,9 +335,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         stepManagerRef.current?.updateWorkflowStep(nodeStepId, 'completed', 
           `Node ${nodeIndex + 1}: Completed processing with ${currentNode.name}`);
 
-        // 更新AI回复，并保存当前节点的步骤到该turn
-        const currentSteps = stepManagerRef.current?.getSteps() || [];
-        const nodeStep = currentSteps.find(step => step.id === nodeStepId);
+        // 更新AI回复，并保存所有步骤历史到该turn
+        const allSteps = stepManagerRef.current?.getSteps() || [];
         
         setConversationState(prev => ({
           ...prev,
@@ -314,14 +344,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             t.id === userTurn.id 
               ? {
                   ...ConversationManager.updateAiResponse([t], userTurn.id, aiResponse.data!.content, 'completed')[0],
-                  processSteps: nodeStep ? [nodeStep] : [] // 只保存当前节点的step
+                  processSteps: [...allSteps] // 保存所有步骤历史
                 }
               : t
           )
         }));
-
-        // 从全局processSteps中移除已完成的节点step，避免累积
-        stepManagerRef.current?.removeStep(nodeStepId);
 
         // 继续下一个节点
         const nextIndex = nodeIndex + 1;
@@ -333,12 +360,19 @@ const ChatArea: React.FC<ChatAreaProps> = ({
           completeWorkflow();
         }
       } else {
-        // 处理错误 - 保存错误步骤到对应turn
+        // 处理错误 - 保存错误步骤到对应turn，添加重试数据
+        const retryData = {
+          type: 'workflow_node',
+          nodeIndex,
+          workflow,
+          formValues,
+          lastResponse,
+          userTurnId: userTurn.id
+        };
         stepManagerRef.current?.updateWorkflowStep(nodeStepId, 'error', 
-          `Node ${nodeIndex + 1}: Error processing with ${currentNode.name} - ${aiResponse.error || 'Unknown error'}`);
+          `Node ${nodeIndex + 1}: Error processing with ${currentNode.name} - ${aiResponse.error || 'Unknown error'}`, retryData);
         
-        const currentSteps = stepManagerRef.current?.getSteps() || [];
-        const nodeStep = currentSteps.find(step => step.id === nodeStepId);
+        const allSteps = stepManagerRef.current?.getSteps() || [];
         
         setConversationState(prev => ({
           ...prev,
@@ -347,22 +381,28 @@ const ChatArea: React.FC<ChatAreaProps> = ({
               ? {
                   ...ConversationManager.updateAiResponse([t], userTurn.id, 
                     `Error: ${aiResponse.error || 'Unknown error'}`, 'error')[0],
-                  processSteps: nodeStep ? [nodeStep] : []
+                  processSteps: [...allSteps] // 保存所有步骤历史
                 }
               : t
           )
         }));
         
-        stepManagerRef.current?.removeStep(nodeStepId);
         stopWorkflow();
       }
     } catch (error) {
       console.error('Error executing agent node:', error);
+      const retryData = {
+        type: 'workflow_node',
+        nodeIndex,
+        workflow,
+        formValues,
+        lastResponse,
+        userTurnId: userTurn.id
+      };
       stepManagerRef.current?.updateWorkflowStep(nodeStepId, 'error', 
-        `Node ${nodeIndex + 1}: Error processing with ${currentNode.name} - ${error instanceof Error ? error.message : 'Unknown error'}`);
+        `Node ${nodeIndex + 1}: Error processing with ${currentNode.name} - ${error instanceof Error ? error.message : 'Unknown error'}`, retryData);
       
-      const currentSteps = stepManagerRef.current?.getSteps() || [];
-      const nodeStep = currentSteps.find(step => step.id === nodeStepId);
+      const allSteps = stepManagerRef.current?.getSteps() || [];
       
       setConversationState(prev => ({
         ...prev,
@@ -371,13 +411,12 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             ? {
                 ...ConversationManager.updateAiResponse([t], userTurn.id, 
                   `Error: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')[0],
-                processSteps: nodeStep ? [nodeStep] : []
+                processSteps: [...allSteps] // 保存所有步骤历史
               }
             : t
         )
       }));
       
-      stepManagerRef.current?.removeStep(nodeStepId);
       stopWorkflow();
     } finally {
       setIsLoading(false);
@@ -402,6 +441,32 @@ const ChatArea: React.FC<ChatAreaProps> = ({
 
   // 完成工作流
   const completeWorkflow = () => {
+    // 在完成工作流前，将最终的步骤历史保存到最后一个工作流turn中
+    const allSteps = stepManagerRef.current?.getSteps() || [];
+    let lastWorkflowTurn = null;
+    
+    // 找到最后一个工作流turn
+    for (let i = conversationState.turns.length - 1; i >= 0; i--) {
+      if (conversationState.turns[i].userInput.workflowInfo) {
+        lastWorkflowTurn = conversationState.turns[i];
+        break;
+      }
+    }
+    
+    if (lastWorkflowTurn && allSteps.length > 0) {
+      setConversationState(prev => ({
+        ...prev,
+        turns: prev.turns.map(t => 
+          t.id === lastWorkflowTurn!.id 
+            ? {
+                ...t,
+                processSteps: [...allSteps] // 保存完整的步骤历史
+              }
+            : t
+        )
+      }));
+    }
+
     setWorkflowState({
       isExecuting: false,
       currentNodeIndex: 0,
@@ -483,7 +548,15 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   // 新的对话回合处理函数
   const handleTurnProcessing = async (turn: ConversationTurn) => {
     // 清空之前的步骤
-    stepManagerRef.current?.clearSteps();
+    // stepManagerRef.current?.clearSteps(); // 注释掉：不要清空历史步骤
+
+    // 准备AI聊天请求数据 (外部系统引用不传递给API)
+    let aiChatRequest: AiChatRequest = {
+      agentId: undefined,
+      documentIds: undefined,
+      userInput: undefined,
+      previousAiOutput: undefined,
+    };
 
     try {
       // 确定需要执行的步骤
@@ -576,7 +649,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       const { agentInfo: finalAgentInfo, documentsWithContent: finalDocuments } = await executeStepsWithActions();
 
       // 准备AI聊天请求数据 (外部系统引用不传递给API)
-      const aiChatRequest: AiChatRequest = {
+      aiChatRequest = {
         agentId: finalAgentInfo?.id || undefined,
         documentIds: actualDocuments.length > 0 ? actualDocuments.map(doc => doc.id) : undefined,
         userInput: turn.userInput.content || undefined,
@@ -596,6 +669,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         stepManagerRef.current?.completeStep('call_ai_service');
 
         // 更新对话回合的AI回复，并保存处理步骤
+        const allSteps = stepManagerRef.current?.getSteps() || [];
         setConversationState(prev => ({
           ...prev,
           turns: prev.turns.map(t => 
@@ -608,7 +682,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                     status: 'completed' as const,
                     timestamp: new Date()
                   },
-                  processSteps: [...processSteps] // 保存当前的步骤
+                  processSteps: [...allSteps] // 保存完整的步骤历史
                 }
               : t
           ),
@@ -622,10 +696,16 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         }));
       } else {
         // 处理AI聊天失败的情况
-        stepManagerRef.current?.markStepAsError('call_ai_service');
+        const retryData = {
+          type: 'ai_chat',
+          request: aiChatRequest,
+          turnId: turn.id
+        };
+        stepManagerRef.current?.markStepAsError('call_ai_service', retryData);
         stepManagerRef.current?.addStep('AI_SERVICE_FAILED', { error: aiResponse.error });
 
         // 更新对话回合的错误回复，并保存处理步骤
+        const allStepsForError = stepManagerRef.current?.getSteps() || [];
         setConversationState(prev => ({
           ...prev,
           turns: prev.turns.map(t => 
@@ -638,7 +718,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                     status: 'error' as const,
                     timestamp: new Date()
                   },
-                  processSteps: [...processSteps] // 保存当前的步骤
+                  processSteps: [...allStepsForError] // 保存完整的步骤历史
                 }
               : t
           ),
@@ -648,12 +728,19 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     } catch (error) {
       console.error('Error occurred while processing message:', error);
       
-      // Add error step
+      // Add error step with retry data
+      const retryData = {
+        type: 'ai_chat',
+        request: aiChatRequest,
+        turnId: turn.id
+      };
+      stepManagerRef.current?.markStepAsError('call_ai_service', retryData);
       stepManagerRef.current?.addStep('ERROR_OCCURRED', { 
         error: error instanceof Error ? error.message : 'Unknown error' 
       });
 
       // 更新对话回合的错误回复，并保存处理步骤
+      const allStepsForCatchError = stepManagerRef.current?.getSteps() || [];
       setConversationState(prev => ({
         ...prev,
         turns: prev.turns.map(t => 
@@ -666,7 +753,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                   status: 'error' as const,
                   timestamp: new Date()
                 },
-                processSteps: [...processSteps] // 保存当前的步骤
+                processSteps: [...allStepsForCatchError] // 保存完整的步骤历史
               }
             : t
         ),
@@ -714,6 +801,156 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     }));
   };
 
+  // 重试失败的步骤
+  const handleRetryStep = async (stepId: string) => {
+    console.log('🔄 Attempting to retry step:', stepId);
+    
+    // 查找包含该步骤的turn和step信息
+    let step: ProcessStep | undefined;
+    let targetTurnId: string | undefined;
+    
+    // 从历史记录中查找步骤
+    for (const turn of conversationState.turns) {
+      if (turn.processSteps) {
+        const historyStep = turn.processSteps.find(s => s.id === stepId);
+        if (historyStep && historyStep.status === 'error' && historyStep.retryData) {
+          step = historyStep;
+          targetTurnId = turn.id;
+          break;
+        }
+      }
+    }
+    
+    if (!step || !targetTurnId) {
+      console.warn('❌ Step not found in conversation history:', stepId);
+      return;
+    }
+    
+    console.log('✅ Found step for retry:', {
+      stepId: step.id,
+      turnId: targetTurnId,
+      retryData: step.retryData
+    });
+
+    const retryData = step.retryData;
+    
+    // 为重试创建新的步骤 - 清空当前管理器并添加重试步骤
+    stepManagerRef.current?.clearSteps();
+    
+    // 添加重试步骤
+    const retryStepId = `${stepId}_retry_${Date.now()}`;
+    stepManagerRef.current?.addExistingStep({
+      ...step,
+      id: retryStepId,
+      status: 'processing',
+      timestamp: new Date(),
+      retryCount: (step.retryCount || 0) + 1
+    });
+    
+    // 设置当前turn为重试的turn
+    setConversationState(prev => ({
+      ...prev,
+      currentTurnId: targetTurnId
+    }));
+
+    try {
+      // 根据重试数据的类型执行相应的重试逻辑
+      if (retryData.type === 'ai_chat') {
+        // AI聊天重试
+        await retryAiChat(retryStepId, retryData);
+      } else if (retryData.type === 'workflow_node') {
+        // 工作流节点重试
+        await retryWorkflowNode(retryStepId, retryData);
+      } else {
+        console.warn('Unknown retry type:', retryData.type);
+        stepManagerRef.current?.markStepAsError(retryStepId, retryData);
+      }
+    } catch (error) {
+      console.error('Retry failed:', error);
+      stepManagerRef.current?.markStepAsError(retryStepId, retryData);
+    }
+  };
+
+  // 重试AI聊天
+  const retryAiChat = async (stepId: string, retryData: any) => {
+    try {
+      const aiResponse = await aiChat(retryData.request);
+      
+      if (aiResponse.success && aiResponse.data) {
+        // 重试成功
+        stepManagerRef.current?.completeStep(stepId);
+        
+        // 更新对应的对话回合，包括步骤状态
+        const { turnId } = retryData;
+        const allSteps = stepManagerRef.current?.getSteps() || [];
+        setConversationState(prev => ({
+          ...prev,
+          turns: prev.turns.map(t => 
+            t.id === turnId 
+              ? {
+                  ...t,
+                  aiResponse: {
+                    ...t.aiResponse,
+                    content: aiResponse.data!.content,
+                    status: 'completed' as const,
+                    timestamp: new Date()
+                  },
+                  processSteps: allSteps.length > 0 ? [...allSteps] : t.processSteps
+                }
+              : t
+          ),
+          currentTurnId: undefined
+        }));
+
+        // 更新可编辑状态
+        setConversationState(prev => ({
+          ...prev,
+          turns: ConversationManager.updateEditableStatus(prev.turns)
+        }));
+      } else {
+        // 重试失败
+        stepManagerRef.current?.markStepAsError(stepId, retryData);
+        
+        // 更新错误回复，包括步骤状态
+        const { turnId } = retryData;
+        const allStepsForRetryError = stepManagerRef.current?.getSteps() || [];
+        setConversationState(prev => ({
+          ...prev,
+          turns: prev.turns.map(t => 
+            t.id === turnId 
+              ? {
+                  ...t,
+                  aiResponse: {
+                    ...t.aiResponse,
+                    content: `Retry failed: ${aiResponse.error || 'Unknown error'}`,
+                    status: 'error' as const,
+                    timestamp: new Date()
+                  },
+                  processSteps: allStepsForRetryError.length > 0 ? [...allStepsForRetryError] : t.processSteps
+                }
+              : t
+          )
+        }));
+      }
+    } catch (error) {
+      stepManagerRef.current?.markStepAsError(stepId, retryData);
+      throw error;
+    }
+  };
+
+  // 重试工作流节点
+  const retryWorkflowNode = async (stepId: string, retryData: any) => {
+    const { nodeIndex, workflow, formValues, lastResponse } = retryData;
+    
+    try {
+      // 重新执行工作流节点
+      await executeAgentNode(nodeIndex, workflow, formValues, lastResponse);
+    } catch (error) {
+      stepManagerRef.current?.markStepAsError(stepId, retryData);
+      throw error;
+    }
+  };
+
   return (
     <div className="h-full flex flex-col rounded-xl overflow-hidden">
       {/* 聊天区域 */}
@@ -755,23 +992,41 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                     />
                   </div>
                   
-                                     {/* 2. 处理步骤卡片 - 显示当前处理中或已完成的步骤 */}
-                   {((conversationState.currentTurnId === turn.id && processSteps.length > 0) ||
-                     (turn.processSteps && turn.processSteps.length > 0)) && (
-                     <div className="mt-8 space-y-4">
-                       {/* 优先显示当前processSteps，否则显示保存的processSteps */}
-                       {(conversationState.currentTurnId === turn.id ? processSteps : turn.processSteps || []).map((step, stepIndex) => (
-                         <div key={step.id} className="relative">
-                           <StepCard
-                             id={step.id}
-                             content={step.content}
-                             status={step.status}
-                             timestamp={step.timestamp}
-                           />
-                         </div>
-                       ))}
-                     </div>
-                   )}
+                  {/* 2. 处理步骤卡片 - 永远显示所有步骤历史 */}
+                  {(() => {
+                    let stepsToShow: ProcessStep[] = [];
+                    
+                    // 如果是当前正在处理的turn，显示实时步骤
+                    if (conversationState.currentTurnId === turn.id && processSteps.length > 0) {
+                      stepsToShow = processSteps;
+                    } 
+                    // 否则显示已保存的步骤历史
+                    else if (turn.processSteps && turn.processSteps.length > 0) {
+                      stepsToShow = turn.processSteps;
+                    }
+                    
+                    // 只要有步骤就显示
+                    if (stepsToShow.length > 0) {
+                      return (
+                        <div className="mt-8 space-y-4">
+                          {stepsToShow.map((step, stepIndex) => (
+                            <div key={step.id} className="relative">
+                              <StepCard
+                                id={step.id}
+                                content={step.content}
+                                status={step.status}
+                                timestamp={step.timestamp}
+                                onRetry={step.status === 'error' ? handleRetryStep : undefined}
+                                retryData={step.retryData}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+                    
+                    return null;
+                  })()}
                   
                   {/* 3. AI回复卡片 - 在AI完成回复后显示（包括空回复） */}
                   {(turn.aiResponse.status === 'completed' || turn.aiResponse.status === 'error' || turn.aiResponse.content) && (
@@ -785,8 +1040,6 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                         isEditable={turn.aiResponse.isEditable}
                         onEditSave={(newContent) => handleEditAiResponse(turn.id, newContent)}
                       />
-                      
-
                     </div>
                   )}
                 </div>

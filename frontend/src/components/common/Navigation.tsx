@@ -1,11 +1,15 @@
 import React from 'react';
-import { Layout, Typography, Avatar } from 'antd';
-import { MessageOutlined, SettingOutlined, UserOutlined } from '@ant-design/icons';
+import { Layout, Typography, Avatar, Button } from 'antd';
+import { MessageOutlined, SettingOutlined, UserOutlined, DeleteOutlined } from '@ant-design/icons';
 
 const { Header } = Layout;
 const { Text } = Typography;
 
-const Navigation: React.FC = () => {
+interface NavigationProps {
+  onClearConversation?: () => void;
+}
+
+const Navigation: React.FC<NavigationProps> = ({ onClearConversation }) => {
   return (
     <Header className="bg-white border-b border-gray-200 px-6 h-16 flex items-center justify-between shadow-sm">
       <div className="flex items-center space-x-4">
@@ -19,7 +23,15 @@ const Navigation: React.FC = () => {
       
       <div className="flex items-center space-x-4">
         <div className="hidden md:block">
-          <Text className="text-sm text-gray-600">POC System</Text>
+          <Button 
+            type="text" 
+            onClick={onClearConversation} 
+            icon={<DeleteOutlined />}
+            className="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-600 hover:text-gray-800 hover:bg-gray-100 border-0 transition-all duration-200 font-medium"
+            size="middle"
+          >
+            <span>Clear conversation</span>
+          </Button>
         </div>
         <div className="flex items-center space-x-2">
           <div className="p-2 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors">

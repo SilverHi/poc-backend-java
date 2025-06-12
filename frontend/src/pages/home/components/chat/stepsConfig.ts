@@ -68,6 +68,8 @@ export interface ProcessStep {
   content: string;
   status: StepStatus;
   timestamp: Date;
+  retryData?: any; // 重试所需的数据
+  retryCount?: number; // 重试次数
 }
 
 // Step manager class
@@ -91,7 +93,8 @@ export class StepManager {
         id: config.id,
         content: config.getContent(contexts[stepId]),
         status: 'waiting' as StepStatus,
-        timestamp: new Date()
+        timestamp: new Date(),
+        retryCount: 0
       };
     });
     
@@ -144,9 +147,42 @@ export class StepManager {
     this.onUpdate([...this.steps]);
   }
 
-  // Mark step as error status
-  markStepAsError(stepId: string) {
-    this.updateStepStatus(stepId, 'error');
+  // Mark step as error status with retry data
+  markStepAsError(stepId: string, retryData?: any) {
+    this.steps = this.steps.map(step => 
+      step.id === stepId 
+        ? { 
+            ...step, 
+            status: 'error' as StepStatus, 
+            timestamp: new Date(),
+            retryData 
+          }
+        : step
+    );
+    this.onUpdate([...this.steps]);
+  }
+
+  // Retry a failed step
+  retryStep(stepId: string): ProcessStep | null {
+    const step = this.steps.find(s => s.id === stepId);
+    if (!step || step.status !== 'error') {
+      return null;
+    }
+
+    // Update retry count and reset status to processing
+    this.steps = this.steps.map(s => 
+      s.id === stepId 
+        ? { 
+            ...s, 
+            status: 'processing' as StepStatus, 
+            timestamp: new Date(),
+            retryCount: (s.retryCount || 0) + 1
+          }
+        : s
+    );
+    this.onUpdate([...this.steps]);
+    
+    return this.steps.find(s => s.id === stepId) || null;
   }
 
   // Add new step (for error handling etc.)
@@ -161,7 +197,8 @@ export class StepManager {
       id: config.id,
       content: config.getContent(context),
       status: 'completed',
-      timestamp: new Date()
+      timestamp: new Date(),
+      retryCount: 0
     };
 
     this.steps.push(newStep);
@@ -169,12 +206,14 @@ export class StepManager {
   }
 
   // Add workflow step with custom content
-  addWorkflowStep(stepId: string, context: { nodeName: string; nodeIndex: number; status: StepStatus }) {
+  addWorkflowStep(stepId: string, context: { nodeName: string; nodeIndex: number; status: StepStatus }, retryData?: any) {
     const newStep: ProcessStep = {
       id: stepId,
       content: `Node ${context.nodeIndex}: Processing with ${context.nodeName}...`,
       status: context.status,
-      timestamp: new Date()
+      timestamp: new Date(),
+      retryData,
+      retryCount: 0
     };
 
     this.steps.push(newStep);
@@ -183,14 +222,15 @@ export class StepManager {
   }
 
   // Update workflow step status
-  updateWorkflowStep(stepId: string, status: StepStatus, content?: string) {
+  updateWorkflowStep(stepId: string, status: StepStatus, content?: string, retryData?: any) {
     this.steps = this.steps.map(step => 
       step.id === stepId 
         ? { 
             ...step, 
             status, 
             content: content || step.content,
-            timestamp: new Date() 
+            timestamp: new Date(),
+            retryData: retryData !== undefined ? retryData : step.retryData
           }
         : step
     );
@@ -212,5 +252,35 @@ export class StepManager {
   // Get current steps
   getSteps(): ProcessStep[] {
     return [...this.steps];
+  }
+
+  // Get step by id
+  getStepById(stepId: string): ProcessStep | undefined {
+    return this.steps.find(step => step.id === stepId);
+  }
+
+  // Add existing step for retry (for historical steps)
+  addExistingStep(step: ProcessStep) {
+    // Check if step already exists
+    const existingIndex = this.steps.findIndex(s => s.id === step.id);
+    if (existingIndex >= 0) {
+      // Update existing step
+      this.steps[existingIndex] = {
+        ...step,
+        status: 'processing',
+        timestamp: new Date(),
+        retryCount: (step.retryCount || 0) + 1
+      };
+    } else {
+      // Add new step
+      this.steps.push({
+        ...step,
+        status: 'processing',
+        timestamp: new Date(),
+        retryCount: (step.retryCount || 0) + 1
+      });
+    }
+    this.onUpdate([...this.steps]);
+    return this.steps.find(s => s.id === step.id) || null;
   }
 } 

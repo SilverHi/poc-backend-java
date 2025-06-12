@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, Typography } from 'antd';
-import { PlayCircleOutlined, CheckCircleOutlined, LoadingOutlined, ClockCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { Card, Typography, Button } from 'antd';
+import { PlayCircleOutlined, CheckCircleOutlined, LoadingOutlined, ClockCircleOutlined, ExclamationCircleOutlined, RedoOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
 
@@ -9,13 +9,17 @@ interface StepCardProps {
   content: string;
   status: 'waiting' | 'processing' | 'completed' | 'error';
   timestamp: Date;
+  onRetry?: (stepId: string) => void;
+  retryData?: any; // 重试所需的数据
 }
 
 const StepCard: React.FC<StepCardProps> = ({
   id,
   content,
   status,
-  timestamp
+  timestamp,
+  onRetry,
+  retryData
 }) => {
   const getStatusIcon = () => {
     switch (status) {
@@ -47,6 +51,12 @@ const StepCard: React.FC<StepCardProps> = ({
     }
   };
 
+  const handleRetry = () => {
+    if (onRetry) {
+      onRetry(id);
+    }
+  };
+
   return (
     <div className="flex justify-center">
       <div className="w-full max-w-3xl">
@@ -67,6 +77,22 @@ const StepCard: React.FC<StepCardProps> = ({
                 {content}
               </Text>
             </div>
+
+            {/* 重试按钮 - 只在错误状态且有重试回调时显示 */}
+            {status === 'error' && onRetry && (
+              <div className="flex-shrink-0">
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<RedoOutlined />}
+                  onClick={handleRetry}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-100 border-0 px-2"
+                  title="Retry this step"
+                >
+                  Retry
+                </Button>
+              </div>
+            )}
             
             {/* 时间戳 */}
             <div className="flex-shrink-0">
