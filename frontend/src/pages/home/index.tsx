@@ -72,7 +72,7 @@ const Home: React.FC = () => {
     const newAgent: SelectedAgent = {
       id: agent.id,
       name: agent.name,
-      type: agent.type || 'tool',
+      type: agent.category === 'agent' ? 'agent' : agent.type || 'tool',
       description: agent.description
     };
     setSelectedAgent(newAgent);

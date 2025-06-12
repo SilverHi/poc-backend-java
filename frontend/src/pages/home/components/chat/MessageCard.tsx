@@ -19,7 +19,7 @@ interface ReferencedDocument {
 interface SelectedAgent {
   id: string;
   name: string;
-  type: 'workflow' | 'tool';
+  type: 'workflow' | 'tool' | 'agent';
   description?: string;
 }
 
@@ -238,7 +238,7 @@ const MessageCard: React.FC<MessageCardProps> = ({
                   </div>
                   <div className="flex items-center space-x-2">
                     <Tag color="purple">
-                      {selectedAgent.type === 'workflow' ? 'Workflow' : 'Tool'}
+                      {selectedAgent.type === 'workflow' ? 'Workflow' : selectedAgent.type === 'agent' ? 'Agent' : 'Tool'}
                     </Tag>
                     <Text className="text-sm font-medium text-gray-800">{selectedAgent.name}</Text>
                     {selectedAgent.description && (

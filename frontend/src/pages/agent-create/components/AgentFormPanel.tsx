@@ -35,9 +35,9 @@ const AgentFormPanel: React.FC<AgentFormPanelProps> = ({
   // 可选的类型
   const typeOptions = [
     { value: 'assistant', label: 'General Assistant' },
-    { value: 'specialist', label: 'Specialist Assistant' },
-    { value: 'creative', label: 'Creative Assistant' },
-    { value: 'analytical', label: 'Analytical Assistant' }
+    { value: 'specialist', label: 'Business analyst' },
+    { value: 'creative', label: 'Project manager' },
+    { value: 'analytical', label: 'Project management officer' }
   ];
 
   // 可选的模型
@@ -195,9 +195,9 @@ const AgentFormPanel: React.FC<AgentFormPanelProps> = ({
                   value={formData.temperature}
                   onChange={(value) => onFormDataChange({ temperature: value })}
                   marks={{
-                    0: 'Conservative',
-                    1: 'Balanced',
-                    2: 'Creative'
+                    0: '  ',
+                    1: 'Medium',
+                    2: 'High'
                   }}
                 />
                 <Text className="text-xs text-gray-500">

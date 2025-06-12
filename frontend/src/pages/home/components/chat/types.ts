@@ -10,7 +10,7 @@ export interface ReferencedDocument {
 export interface SelectedAgent {
   id: string;
   name: string;
-  type: 'workflow' | 'tool';
+  type: 'workflow' | 'tool' | 'agent';
   description?: string;
   systemPrompt?: string;
   modelName?: string;

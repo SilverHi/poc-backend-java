@@ -145,7 +145,7 @@ const ConversationTurnCard: React.FC<ConversationTurnCardProps> = ({
               </div>
               <div className="flex items-center space-x-2">
                 <Tag color="purple">
-                  {userInput.selectedAgent.type === 'workflow' ? 'Workflow' : 'Tool'}
+                  {userInput.selectedAgent.type === 'workflow' ? 'Workflow' : userInput.selectedAgent.type === 'agent' ? 'Agent' : 'Tool'}
                 </Tag>
                 <Text className="text-sm font-medium text-gray-800">{userInput.selectedAgent.name}</Text>
                 {userInput.selectedAgent.description && (
