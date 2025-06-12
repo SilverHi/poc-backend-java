@@ -142,7 +142,7 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
         }
       }
     } catch (error) {
-      message.error('加载数据失败');
+              message.error('Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -150,7 +150,7 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
 
   // 加载workflows数据
   const loadWorkflows = async () => {
-    if (workflowsLoaded) return; // 如果已经加载过，不重复加载
+    if (workflowsLoaded) return; // Don't reload if already loaded
     
     setWorkflowsLoading(true);
     try {
@@ -163,10 +163,10 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
         }
         setWorkflowsLoaded(true);
       } else {
-        message.error(workflowsResult.error || '加载工作流失败');
+        message.error(workflowsResult.error || 'Failed to load workflows');
       }
     } catch (error) {
-      message.error('加载工作流过程中发生错误');
+              message.error('Error occurred while loading workflows');
     } finally {
       setWorkflowsLoading(false);
     }
@@ -258,12 +258,12 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
     try {
       const result = await executeTool(toolId);
       if (result.success) {
-        message.success(result.data?.result || '工具使用成功');
+        message.success(result.data?.result || 'Tool used successfully');
       } else {
-        message.error(result.error || '使用失败');
+        message.error(result.error || 'Usage failed');
       }
     } catch (error) {
-      message.error('使用过程中发生错误');
+      message.error('Error occurred during usage');
     } finally {
       setExecuting(false);
     }
@@ -283,7 +283,7 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
   const handleTabChange = (key: string) => {
     setActiveTab(key);
     
-    // 如果切换到workflows tab且还没有加载过workflows，则加载数据
+    // Load workflows data if switching to workflows tab and not loaded yet
     if (key === 'workflows' && !workflowsLoaded) {
       loadWorkflows();
     }
@@ -340,7 +340,7 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect }) => {
       return (
         <div className="flex justify-center items-center h-32">
           <div className="text-center">
-            <div className="text-gray-400 mb-2">点击此标签页加载工作流列表</div>
+            <div className="text-gray-400 mb-2">Click this tab to load workflow list</div>
           </div>
         </div>
       );

@@ -75,7 +75,7 @@ const AgentCard: React.FC<AgentCardProps> = ({
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center space-x-1">
               <span className="text-xs text-green-600 font-medium">
-                调用 {formatCallCount(agent.callCount)} 次
+                Called {formatCallCount(agent.callCount)} times
               </span>
             </div>
             <Text className="text-xs text-gray-400">
@@ -86,7 +86,7 @@ const AgentCard: React.FC<AgentCardProps> = ({
           {isSelected && (
             <div className="mt-2 pt-2 border-t border-gray-200">
               <Text className="text-xs text-gray-600 block mb-1">
-                能力：
+                Capabilities:
               </Text>
               <div className="flex flex-wrap gap-1">
                 {agent.capability.map((cap, index) => (

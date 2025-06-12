@@ -74,7 +74,7 @@ const ToolCard: React.FC<ToolCardProps> = ({
                 onUse(tool.id);
               }}
             >
-              使用
+              Use
             </Button>
           </div>
           
@@ -85,7 +85,7 @@ const ToolCard: React.FC<ToolCardProps> = ({
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center space-x-1">
               <span className="text-xs text-purple-600 font-medium">
-                使用 {formatCallCount(tool.callCount)} 次
+                Used {formatCallCount(tool.callCount)} times
               </span>
             </div>
             <Text className="text-xs text-gray-400">

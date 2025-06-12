@@ -101,9 +101,9 @@ public class WorkflowDTO {
     @Data
     public static class WorkflowNode {
         /**
-         * 代理ID
+         * 节点ID
          */
-        private String agentid;
+        private String id;
 
         /**
          * 节点名称
@@ -113,7 +113,8 @@ public class WorkflowDTO {
         /**
          * 用户提示
          */
-        private String userprompt;
+        @JsonProperty("user_prompt")
+        private String userPrompt;
     }
 
     /**

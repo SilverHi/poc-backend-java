@@ -69,7 +69,7 @@ const MessageCard: React.FC<MessageCardProps> = ({
                 <div className="bg-gray-50 rounded-lg p-3 border-l-4 border-green-400">
                   <div className="flex items-center mb-2">
                     <RobotOutlined className="text-green-600 mr-2" />
-                    <Text className="text-sm font-medium text-gray-700">上次回复</Text>
+                    <Text className="text-sm font-medium text-gray-700">Previous Reply</Text>
                   </div>
                   <div className="text-sm text-gray-600">
                     <MarkdownRenderer content={previousAiOutput} />
@@ -83,7 +83,7 @@ const MessageCard: React.FC<MessageCardProps> = ({
                   <div className="flex items-center mb-2">
                     <UserOutlined className="text-blue-600 mr-2" />
                     <Text className="text-sm font-medium text-gray-700">
-                      {hasPreviousAiOutput ? '本次输入' : '用户输入'}
+                      {hasPreviousAiOutput ? 'Current Input' : 'User Input'}
                     </Text>
                   </div>
                   <div className="text-sm text-gray-800">
@@ -97,7 +97,7 @@ const MessageCard: React.FC<MessageCardProps> = ({
                 <div className="bg-orange-50 rounded-lg p-3 border-l-4 border-orange-400">
                   <div className="flex items-center mb-2">
                     <FileTextOutlined className="text-orange-600 mr-2" />
-                    <Text className="text-sm font-medium text-gray-700">引用文档</Text>
+                    <Text className="text-sm font-medium text-gray-700">Referenced Documents</Text>
                   </div>
                   <Space wrap>
                     {referencedDocuments.map((doc) => {
@@ -146,7 +146,7 @@ const MessageCard: React.FC<MessageCardProps> = ({
                 <div className="bg-purple-50 rounded-lg p-3 border-l-4 border-purple-400">
                   <div className="flex items-center mb-2">
                     <ToolOutlined className="text-purple-600 mr-2" />
-                    <Text className="text-sm font-medium text-gray-700">使用Agent</Text>
+                    <Text className="text-sm font-medium text-gray-700">Using Agent</Text>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Tag color="purple">
@@ -172,7 +172,7 @@ const MessageCard: React.FC<MessageCardProps> = ({
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
-                  <Text className="text-sm">正在思考...</Text>
+                  <Text className="text-sm">Thinking...</Text>
                 </div>
               ) : (
                 <div className="bg-green-50 rounded-lg p-3 border-l-4 border-green-400 relative group">

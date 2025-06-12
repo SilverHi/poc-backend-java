@@ -1,13 +1,13 @@
 import React from 'react';
 import { Card, Typography } from 'antd';
-import { PlayCircleOutlined, CheckCircleOutlined, LoadingOutlined } from '@ant-design/icons';
+import { PlayCircleOutlined, CheckCircleOutlined, LoadingOutlined, ClockCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
 
 interface StepCardProps {
   id: string;
   content: string;
-  status: 'processing' | 'completed' | 'running';
+  status: 'waiting' | 'processing' | 'completed' | 'error';
   timestamp: Date;
 }
 
@@ -19,25 +19,29 @@ const StepCard: React.FC<StepCardProps> = ({
 }) => {
   const getStatusIcon = () => {
     switch (status) {
+      case 'waiting':
+        return <ClockCircleOutlined className="text-gray-400" />;
       case 'processing':
         return <LoadingOutlined className="text-blue-500" spin />;
       case 'completed':
         return <CheckCircleOutlined className="text-green-500" />;
-      case 'running':
-        return <PlayCircleOutlined className="text-orange-500" />;
+      case 'error':
+        return <ExclamationCircleOutlined className="text-red-500" />;
       default:
-        return <PlayCircleOutlined className="text-gray-500" />;
+        return <ClockCircleOutlined className="text-gray-400" />;
     }
   };
 
   const getStatusColor = () => {
     switch (status) {
+      case 'waiting':
+        return 'border-gray-200 bg-gray-50';
       case 'processing':
         return 'border-blue-200 bg-blue-50';
       case 'completed':
         return 'border-green-200 bg-green-50';
-      case 'running':
-        return 'border-orange-200 bg-orange-50';
+      case 'error':
+        return 'border-red-200 bg-red-50';
       default:
         return 'border-gray-200 bg-gray-50';
     }
