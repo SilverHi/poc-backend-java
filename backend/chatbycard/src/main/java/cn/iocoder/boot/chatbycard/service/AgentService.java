@@ -57,4 +57,21 @@ public interface AgentService {
      * @return 创建的Agent信息
      */
     AgentDTO createAgent(CreateAgentRequest request);
+
+    /**
+     * 删除Agent
+     *
+     * @param id 代理ID
+     * @return 删除是否成功
+     */
+    boolean deleteAgent(String id);
+
+    /**
+     * 更新Agent
+     *
+     * @param id 代理ID
+     * @param request 更新Agent请求
+     * @return 更新后的Agent信息，如果Agent不存在则返回null
+     */
+    AgentDTO updateAgent(String id, CreateAgentRequest request);
 } 

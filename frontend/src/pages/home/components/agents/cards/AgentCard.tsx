@@ -1,6 +1,8 @@
 import React from 'react';
-import { Card, Avatar, Button, Tag, Typography } from 'antd';
-import { MoreOutlined } from '@ant-design/icons';
+import { Card, Avatar, Button, Tag, Typography, Dropdown, Modal, message } from 'antd';
+import { MoreOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
+import { deleteAgent } from '../../../../../api';
 
 const { Text } = Typography;
 
@@ -22,6 +24,7 @@ interface AgentCardProps {
   onSelect: (id: string) => void;
   formatCallCount: (count: number) => string;
   getIcon: (iconName: string) => React.ReactNode;
+  onAgentUpdate?: () => void;
 }
 
 const AgentCard: React.FC<AgentCardProps> = ({
@@ -29,8 +32,57 @@ const AgentCard: React.FC<AgentCardProps> = ({
   isSelected,
   onSelect,
   formatCallCount,
-  getIcon
+  getIcon,
+  onAgentUpdate
 }) => {
+  const navigate = useNavigate();
+
+  const handleEdit = () => {
+    navigate(`/agent-create/${agent.id}`);
+  };
+
+  const handleDelete = () => {
+    Modal.confirm({
+      title: '确认删除',
+      content: `确定要删除Agent "${agent.name}" 吗？此操作不可撤销。`,
+      okText: '删除',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          const result = await deleteAgent(agent.id);
+          if (result.success) {
+            message.success('Agent删除成功');
+            if (onAgentUpdate) {
+              onAgentUpdate();
+            }
+          } else {
+            message.error(result.error || '删除失败');
+          }
+        } catch (error) {
+          console.error('Delete agent error:', error);
+          message.error('删除失败，请重试');
+        }
+      }
+    });
+  };
+
+  const menuItems = [
+    {
+      key: 'edit',
+      label: '编辑',
+      icon: <EditOutlined />,
+      onClick: handleEdit,
+    },
+    {
+      key: 'delete',
+      label: '删除',
+      icon: <DeleteOutlined />,
+      onClick: handleDelete,
+      danger: true,
+    },
+  ];
+
   return (
     <Card
       hoverable
@@ -60,12 +112,19 @@ const AgentCard: React.FC<AgentCardProps> = ({
             <Text className="font-medium text-gray-800 truncate text-sm">
               {agent.name}
             </Text>
-            <Button 
-              type="text" 
-              size="small" 
-              icon={<MoreOutlined />}
-              className="text-gray-400 hover:text-gray-600"
-            />
+            <Dropdown 
+              menu={{ items: menuItems }}
+              trigger={['click']}
+              placement="bottomRight"
+            >
+              <Button 
+                type="text" 
+                size="small" 
+                icon={<MoreOutlined />}
+                className="text-gray-400 hover:text-gray-600"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </Dropdown>
           </div>
           
           <Text className="text-xs text-gray-500 block mb-1">

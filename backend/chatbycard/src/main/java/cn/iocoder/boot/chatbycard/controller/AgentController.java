@@ -149,6 +149,46 @@ public class AgentController {
     }
 
     /**
+     * 删除Agent
+     */
+    @DeleteMapping("/{id}")
+    public ApiResponse<Boolean> deleteAgent(@PathVariable String id) {
+        log.info("删除Agent请求，ID: {}", id);
+        
+        try {
+            boolean result = agentService.deleteAgent(id);
+            if (result) {
+                return ApiResponse.success(true, "Agent删除成功");
+            } else {
+                return ApiResponse.error(404, "Agent不存在");
+            }
+        } catch (Exception e) {
+            log.error("删除Agent失败: {}", e.getMessage(), e);
+            return ApiResponse.error("删除Agent失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 更新Agent
+     */
+    @PutMapping("/{id}")
+    public ApiResponse<AgentDTO> updateAgent(@PathVariable String id, @Valid @RequestBody CreateAgentRequest request) {
+        log.info("更新Agent请求，ID: {}, 名称: {}, 类型: {}", id, request.getName(), request.getType());
+        
+        try {
+            AgentDTO agent = agentService.updateAgent(id, request);
+            if (agent != null) {
+                return ApiResponse.success(agent, "Agent更新成功");
+            } else {
+                return ApiResponse.error(404, "Agent不存在");
+            }
+        } catch (Exception e) {
+            log.error("更新Agent失败: {}", e.getMessage(), e);
+            return ApiResponse.error("更新Agent失败: " + e.getMessage());
+        }
+    }
+
+    /**
      * 代理列表响应类
      */
     public static class AgentListResponse {

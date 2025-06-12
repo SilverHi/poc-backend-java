@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout, Button, message } from 'antd';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import { Navigation } from '../../components/common';
 import { SystemPromptPanel, AgentFormPanel, PreviewChatPanel } from './components';
+import { getAgentById, updateAgent } from '../../api';
 
 const { Content } = Layout;
 
@@ -24,6 +25,8 @@ export interface AgentFormData {
 
 const AgentCreate: React.FC = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id?: string }>();
+  const isEditMode = !!id;
   
   // 表单数据状态
   const [formData, setFormData] = useState<AgentFormData>({
@@ -38,6 +41,48 @@ const AgentCreate: React.FC = () => {
     tools: [],
     workflows: []
   });
+
+  // 加载状态
+  const [loading, setLoading] = useState(false);
+
+  // 加载agent数据（编辑模式）
+  useEffect(() => {
+    if (isEditMode && id) {
+      loadAgentData(id);
+    }
+  }, [id, isEditMode]);
+
+  // 加载Agent数据
+  const loadAgentData = async (agentId: string) => {
+    setLoading(true);
+    try {
+      const result = await getAgentById(agentId);
+      if (result.success && result.data) {
+        const agent = result.data;
+        setFormData({
+          name: agent.name,
+          description: agent.description,
+          type: agent.type,
+          icon: agent.icon,
+          modelName: agent.model,
+          systemPrompt: agent.systemPrompt || '', // 正确使用systemPrompt字段
+          temperature: agent.temperature || 0.7, // 使用返回的temperature或默认值
+          maxTokens: agent.maxTokens || 2048, // 使用返回的maxTokens或默认值
+          tools: [],
+          workflows: []
+        });
+      } else {
+        message.error(result.error || 'Failed to load agent data');
+        navigate('/');
+      }
+    } catch (error) {
+      console.error('Load agent error:', error);
+      message.error('Failed to load agent data');
+      navigate('/');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // 处理表单数据更新
   const handleFormDataChange = (data: Partial<AgentFormData>) => {
@@ -66,6 +111,8 @@ const AgentCreate: React.FC = () => {
         return;
       }
 
+      setLoading(true);
+
       // 构建请求数据
       const requestData = {
         name: formData.name.trim(),
@@ -80,34 +127,42 @@ const AgentCreate: React.FC = () => {
         workflows: formData.workflows
       };
 
-      // 调用创建Agent API
-      const response = await fetch('http://localhost:8080/api/chatbycard/agents', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData)
-      });
+      let result;
+      if (isEditMode && id) {
+        // 更新模式
+        result = await updateAgent(id, requestData);
+      } else {
+        // 创建模式
+        const response = await fetch('http://localhost:8080/api/chatbycard/agents', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestData)
+        });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        result = await response.json();
       }
-
-      const result = await response.json();
       
       if (result.success) {
-        message.success('Agent created successfully!');
-        console.log('Created Agent:', result.data);
+        message.success(isEditMode ? 'Agent updated successfully!' : 'Agent created successfully!');
+        console.log(isEditMode ? 'Updated Agent:' : 'Created Agent:', result.data);
         
         // 保存成功后跳转回home页面
         navigate('/');
       } else {
-        throw new Error(result.message || 'Create agent failed');
+        throw new Error(result.message || (isEditMode ? 'Update agent failed' : 'Create agent failed'));
       }
       
     } catch (error) {
       console.error('Save agent error:', error);
       message.error('Save failed, please try again: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -121,13 +176,18 @@ const AgentCreate: React.FC = () => {
         {/* 头部操作栏 */}
         <div className="bg-white px-8 py-2 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-medium text-gray-900 mb-1">Agent Builder</h1>
-            <p className="text-gray-600">Create and configure your intelligent assistant</p>
+            <h1 className="text-2xl font-medium text-gray-900 mb-1">
+              {isEditMode ? 'Edit Agent' : 'Agent Builder'}
+            </h1>
+            <p className="text-gray-600">
+              {isEditMode ? 'Modify your intelligent assistant' : 'Create and configure your intelligent assistant'}
+            </p>
           </div>
           <div className="flex space-x-3">
             <Button 
               onClick={handleGoBack}
               className="h-10 px-6 rounded-lg border-gray-300 text-gray-700 hover:bg-gray-50"
+              disabled={loading}
             >
               Cancel
             </Button>
@@ -135,8 +195,9 @@ const AgentCreate: React.FC = () => {
               type="primary" 
               onClick={handleSaveAgent}
               className="h-10 px-6 rounded-lg bg-black hover:bg-gray-800 border-black"
+              loading={loading}
             >
-              Create Agent
+              {isEditMode ? 'Update Agent' : 'Create Agent'}
             </Button>
           </div>
         </div>

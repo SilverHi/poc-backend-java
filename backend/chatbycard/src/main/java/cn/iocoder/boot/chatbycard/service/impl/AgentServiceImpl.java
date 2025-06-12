@@ -154,6 +154,79 @@ public class AgentServiceImpl implements AgentService {
         return convertToDTO(agent);
     }
 
+    @Override
+    @Transactional
+    public boolean deleteAgent(String id) {
+        log.info("删除AI代理，ID: {}", id);
+        
+        try {
+            Long agentId = Long.parseLong(id);
+            
+            // 检查Agent是否存在
+            ChatAgentsInfo existingAgent = agentMapper.selectById(agentId);
+            if (existingAgent == null) {
+                log.warn("要删除的AI代理不存在，ID: {}", id);
+                return false;
+            }
+            
+            // 执行删除
+            int result = agentMapper.deleteById(agentId);
+            
+            if (result > 0) {
+                log.info("AI代理删除成功，ID: {}", id);
+                return true;
+            } else {
+                log.warn("AI代理删除失败，ID: {}", id);
+                return false;
+            }
+        } catch (NumberFormatException e) {
+            log.error("无效的代理ID: {}", id);
+            return false;
+        }
+    }
+
+    @Override
+    @Transactional
+    public AgentDTO updateAgent(String id, CreateAgentRequest request) {
+        log.info("更新AI代理，ID: {}, 名称: {}", id, request.getName());
+        
+        try {
+            Long agentId = Long.parseLong(id);
+            
+            // 检查Agent是否存在
+            ChatAgentsInfo existingAgent = agentMapper.selectById(agentId);
+            if (existingAgent == null) {
+                log.warn("要更新的AI代理不存在，ID: {}", id);
+                return null;
+            }
+            
+            // 更新Agent信息
+            existingAgent.setName(request.getName());
+            existingAgent.setDescription(request.getDescription());
+            existingAgent.setType(request.getType());
+            existingAgent.setIcon(request.getIcon());
+            existingAgent.setModelName(request.getModelName());
+            existingAgent.setSystemPrompt(request.getSystemPrompt());
+            existingAgent.setTemperature(BigDecimal.valueOf(request.getTemperature()));
+            existingAgent.setMaxTokens(request.getMaxTokens());
+            existingAgent.setUpdateTime(OffsetDateTime.now());
+            
+            // 保存更新
+            int result = agentMapper.updateById(existingAgent);
+            
+            if (result > 0) {
+                log.info("AI代理更新成功，ID: {}, 名称: {}", id, request.getName());
+                return convertToDTO(existingAgent);
+            } else {
+                log.warn("AI代理更新失败，ID: {}", id);
+                return null;
+            }
+        } catch (NumberFormatException e) {
+            log.error("无效的代理ID: {}", id);
+            return null;
+        }
+    }
+
     /**
      * 将实体转换为DTO
      */

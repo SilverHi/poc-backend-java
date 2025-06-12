@@ -32,6 +32,9 @@ export interface Agent {
   capability: string[];
   category: 'agent';
   callCount: number;
+  systemPrompt?: string;
+  temperature?: number;
+  maxTokens?: number;
 }
 
 export interface WorkflowVariable {
@@ -385,7 +388,10 @@ const convertBackendAgentToFrontend = (agent: any): Agent => {
     model: agent.modelName,
     capability: [], // 后端暂时没有capability字段，设为空数组
     category: 'agent' as const,
-    callCount: agent.callCount || 0
+    callCount: agent.callCount || 0,
+    systemPrompt: agent.systemPrompt,
+    temperature: agent.temperature ? Number(agent.temperature) : undefined,
+    maxTokens: agent.maxTokens
   };
 };
 
@@ -579,6 +585,51 @@ export const searchAgents = async (query: string): Promise<ApiResponse<Agent[]>>
  */
 export const incrementAgentCallCount = async (id: string): Promise<ApiResponse<boolean>> => {
   return realIncrementAgentCallCount(id);
+};
+
+/**
+ * 删除Agent - 真实API
+ */
+const realDeleteAgent = async (id: string): Promise<ApiResponse<boolean>> => {
+  const result = await httpRequest<any>(`/api/chatbycard/agents/${id}`, {
+    method: 'DELETE',
+  });
+  
+  return {
+    success: result.success,
+    data: result.success,
+    error: result.error
+  };
+};
+
+/**
+ * 删除Agent
+ */
+export const deleteAgent = async (id: string): Promise<ApiResponse<boolean>> => {
+  return realDeleteAgent(id);
+};
+
+/**
+ * 更新Agent - 真实API
+ */
+const realUpdateAgent = async (id: string, agentData: any): Promise<ApiResponse<any>> => {
+  const result = await httpRequest<any>(`/api/chatbycard/agents/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(agentData),
+  });
+  
+  return {
+    success: result.success,
+    data: result.data,
+    error: result.error
+  };
+};
+
+/**
+ * 更新Agent
+ */
+export const updateAgent = async (id: string, agentData: any): Promise<ApiResponse<any>> => {
+  return realUpdateAgent(id, agentData);
 };
 
 /**

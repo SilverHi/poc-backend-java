@@ -332,6 +332,7 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect, onWorkflowSele
           onSelect={handleAgentSelect}
           formatCallCount={formatCallCount}
           getIcon={getIcon}
+          onAgentUpdate={loadData} // 传递刷新函数
         />
       ))}
     </div>
