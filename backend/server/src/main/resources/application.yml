@@ -56,4 +56,11 @@ management:
         include: health,info,metrics
   endpoint:
     health:
-      show-details: when-authorized 
+      show-details: when-authorized
+
+# 外部API配置
+external:
+  api:
+    workflow:
+      url: http://localhost:8000/api/workflows/?skip=0&limit=100
+      frontend-url: http://localhost:3001 

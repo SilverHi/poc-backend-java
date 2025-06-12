@@ -40,13 +40,21 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     currentTurnId: undefined
   });
   
-  // 工作流状态管理
+  // 工作流状态管理 - 添加ref来确保实时状态检查
   const [workflowState, setWorkflowState] = useState<WorkflowState>({
     isExecuting: false,
     currentNodeIndex: 0,
     formValues: {},
     shouldStop: false
   });
+  
+  // 使用ref来保存最新的shouldStop状态，避免闭包问题
+  const shouldStopRef = useRef(false);
+  
+  // 同步更新ref
+  useEffect(() => {
+    shouldStopRef.current = workflowState.shouldStop;
+  }, [workflowState.shouldStop]);
   
   // 输入区域状态管理
   const [inputAreaState, setInputAreaState] = useState<InputAreaState>('normal');
@@ -155,6 +163,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({
 
   // 启动工作流
   const startWorkflow = (workflow: Workflow, formValues: Record<string, string>) => {
+    console.log('Starting workflow:', workflow.name);
+    
+    // 重置停止状态
+    shouldStopRef.current = false;
+    
     setWorkflowState({
       isExecuting: true,
       currentWorkflow: workflow,
@@ -197,8 +210,9 @@ const ChatArea: React.FC<ChatAreaProps> = ({
 
   // 执行当前节点
   const executeCurrentNode = async (nodeIndex: number, workflow: Workflow, formValues: Record<string, string>, lastResponse?: string) => {
-    if (workflowState.shouldStop) {
-      stopWorkflow();
+    // 使用ref检查最新的停止状态
+    if (shouldStopRef.current) {
+      console.log('Workflow execution stopped by user');
       return;
     }
 
@@ -219,7 +233,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       // 跳过开始节点，直接执行下一个
       console.log(`Skipping start node: ${currentNode.name}`);
       const nextIndex = nodeIndex + 1;
-      if (nextIndex < workflow.nodes.length) {
+      if (nextIndex < workflow.nodes.length && !shouldStopRef.current) {
         executeCurrentNode(nextIndex, workflow, formValues, lastResponse);
       } else {
         completeWorkflow();
@@ -277,9 +291,14 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         
         // 如果既没有prompt也没有上个AI的输出，跳过这个节点
         const nextIndex = nodeIndex + 1;
-        if (nextIndex < workflow.nodes.length && !workflowState.shouldStop) {
+        if (nextIndex < workflow.nodes.length && !shouldStopRef.current) {
           setTimeout(() => {
-            executeCurrentNode(nextIndex, workflow, formValues, lastResponse);
+            // 在setTimeout中再次检查停止状态
+            if (!shouldStopRef.current) {
+              executeCurrentNode(nextIndex, workflow, formValues, lastResponse);
+            } else {
+              console.log('Workflow execution stopped before next node (skip case)');
+            }
           }, 500);
         } else {
           completeWorkflow();
@@ -352,9 +371,14 @@ const ChatArea: React.FC<ChatAreaProps> = ({
 
         // 继续下一个节点
         const nextIndex = nodeIndex + 1;
-        if (nextIndex < workflow.nodes.length && !workflowState.shouldStop) {
+        if (nextIndex < workflow.nodes.length && !shouldStopRef.current) {
           setTimeout(() => {
-            executeCurrentNode(nextIndex, workflow, formValues, aiResponse.data!.content);
+            // 在setTimeout中再次检查停止状态，确保实时性
+            if (!shouldStopRef.current) {
+              executeCurrentNode(nextIndex, workflow, formValues, aiResponse.data!.content);
+            } else {
+              console.log('Workflow execution stopped before next node');
+            }
           }, 1500);
         } else {
           completeWorkflow();
@@ -425,6 +449,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({
 
   // 停止工作流
   const stopWorkflow = () => {
+    console.log('Stop workflow called');
+    
+    // 立即更新ref状态，确保实时性
+    shouldStopRef.current = true;
+    
     setWorkflowState(prev => ({
       ...prev,
       shouldStop: true,
@@ -441,6 +470,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({
 
   // 完成工作流
   const completeWorkflow = () => {
+    console.log('Completing workflow');
+    
+    // 重置停止状态
+    shouldStopRef.current = false;
+    
     // 在完成工作流前，将最终的步骤历史保存到最后一个工作流turn中
     const allSteps = stepManagerRef.current?.getSteps() || [];
     let lastWorkflowTurn = null;
@@ -1217,7 +1251,6 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                 <Button
                   type="default"
                   onClick={stopWorkflow}
-                  disabled={isLoading}
                   className="border-red-500 text-red-500 hover:bg-red-50 hover:border-red-600"
                 >
                   Stop Workflow

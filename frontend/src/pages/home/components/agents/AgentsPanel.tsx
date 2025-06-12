@@ -15,7 +15,7 @@ import {
   PictureOutlined,
   PlusOutlined
 } from '@ant-design/icons';
-import { getAgents, getWorkflows, getTools, executeTool, type Agent, type Workflow, type Tool } from '../../../../api';
+import { getAgents, getWorkflows, getTools, executeTool, getWorkflowFrontendUrl, type Agent, type Workflow, type Tool } from '../../../../api';
 import { AgentCard, WorkflowCard, ToolCard } from './cards';
 
 // 自定义滚动条样式
@@ -276,8 +276,18 @@ const AgentsPanel: React.FC<AgentsPanelProps> = ({ onAgentSelect, onWorkflowSele
   };
 
   // 处理添加新Workflow
-  const handleAddWorkflow = () => {
-    window.open('http://localhost:3001', '_blank');
+  const handleAddWorkflow = async () => {
+    try {
+      const result = await getWorkflowFrontendUrl();
+      if (result.success && result.data) {
+        window.open(result.data, '_blank');
+      } else {
+        message.error(result.error || '获取跳转URL失败');
+      }
+    } catch (error) {
+      message.error('获取跳转URL时发生错误');
+      console.error('Get workflow frontend URL error:', error);
+    }
   };
 
   // 处理tab切换

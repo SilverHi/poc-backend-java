@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -29,16 +30,23 @@ public class WorkflowServiceImpl implements WorkflowService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
-    // 外部API地址
-    private static final String EXTERNAL_API_URL = "http://localhost:8000/api/workflows/?skip=0&limit=100";
+    // 从配置文件读取外部API完整地址
+    @Value("${external.api.workflow.url}")
+    private String workflowApiUrl;
+    
+    // 从配置文件读取前端跳转URL
+    @Value("${external.api.workflow.frontend-url}")
+    private String workflowFrontendUrl;
 
     @Override
     public List<WorkflowDTO> getAllWorkflows() {
         log.info("调用外部API获取所有工作流列表");
         
         try {
+            log.debug("调用外部API URL: {}", workflowApiUrl);
+            
             // 调用外部API
-            String response = restTemplate.getForObject(EXTERNAL_API_URL, String.class);
+            String response = restTemplate.getForObject(workflowApiUrl, String.class);
             
             if (response == null || response.trim().isEmpty()) {
                 log.warn("外部API返回空响应");
@@ -113,6 +121,12 @@ public class WorkflowServiceImpl implements WorkflowService {
         // 由于外部API可能不支持增加调用次数，这里只记录日志
         // 实际项目中可能需要调用外部API的相应接口
         log.warn("外部API暂不支持增加调用次数功能");
+    }
+
+    @Override
+    public String getWorkflowFrontendUrl() {
+        log.info("获取工作流前端跳转URL: {}", workflowFrontendUrl);
+        return workflowFrontendUrl;
     }
 
     /**

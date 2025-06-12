@@ -48,4 +48,11 @@ public interface WorkflowService {
      * @param id 工作流ID
      */
     void incrementCallCount(String id);
+
+    /**
+     * 获取工作流前端跳转URL
+     *
+     * @return 前端跳转URL
+     */
+    String getWorkflowFrontendUrl();
 } 

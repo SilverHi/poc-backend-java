@@ -117,16 +117,32 @@ public class ExternalWorkflowController {
     /**
      * 增加工作流调用次数
      */
-    @PostMapping("/{id}/increment-call")
-    public ApiResponse<Boolean> incrementCallCount(@PathVariable String id) {
+    @PostMapping("/{id}/increment")
+    public ApiResponse<String> incrementCallCount(@PathVariable String id) {
         log.info("增加工作流调用次数请求，ID: {}", id);
         
         try {
             workflowService.incrementCallCount(id);
-            return ApiResponse.success(true, "调用次数更新成功");
+            return ApiResponse.success("调用次数增加成功");
         } catch (Exception e) {
             log.error("增加工作流调用次数失败: {}", e.getMessage(), e);
             return ApiResponse.error("增加工作流调用次数失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取工作流前端跳转URL
+     */
+    @GetMapping("/frontend-url")
+    public ApiResponse<String> getWorkflowFrontendUrl() {
+        log.info("获取工作流前端跳转URL请求");
+        
+        try {
+            String frontendUrl = workflowService.getWorkflowFrontendUrl();
+            return ApiResponse.success(frontendUrl);
+        } catch (Exception e) {
+            log.error("获取工作流前端跳转URL失败: {}", e.getMessage(), e);
+            return ApiResponse.error("获取工作流前端跳转URL失败: " + e.getMessage());
         }
     }
 

@@ -24,4 +24,11 @@ logging:
     cn.iocoder.boot: debug
     org.springframework.web: debug
     org.hibernate.SQL: debug
-    org.hibernate.type.descriptor.sql.BasicBinder: trace 
+    org.hibernate.type.descriptor.sql.BasicBinder: trace
+
+# 外部API配置 - 开发环境
+external:
+  api:
+    workflow:
+      url: http://localhost:8000/api/workflows/?skip=0&limit=100
+      frontend-url: http://localhost:3001 

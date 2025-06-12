@@ -592,6 +592,43 @@ export const executeWorkflow = async (workflowId: string, params?: any): Promise
 };
 
 /**
+ * 获取工作流前端跳转URL
+ */
+export const getWorkflowFrontendUrl = async (): Promise<ApiResponse<string>> => {
+  try {
+    const result = await httpRequest<any>('/api/chatbycard/workflows/frontend-url');
+    
+    // 处理后端响应：httpRequest返回{success, data}，其中data是后端的ApiResponse
+    if (result.success && result.data) {
+      const backendResponse = result.data;
+      
+      if (backendResponse.success && backendResponse.data) {
+        return {
+          success: true,
+          data: backendResponse.data,
+        };
+      }
+      
+      return {
+        success: false,
+        error: backendResponse.error || '获取工作流前端跳转URL失败'
+      };
+    }
+    
+    return {
+      success: false,
+      error: result.error || '获取工作流前端跳转URL失败：请求失败'
+    };
+  } catch (error) {
+    console.error('Get workflow frontend URL error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '获取工作流前端跳转URL失败'
+    };
+  }
+};
+
+/**
  * 使用Tool
  */
 export const executeTool = async (toolId: string, params?: any): Promise<ApiResponse<{ result: string; status: string }>> => {
