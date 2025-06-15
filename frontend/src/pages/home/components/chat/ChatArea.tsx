@@ -988,8 +988,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   return (
     <div className="h-full flex flex-col rounded-xl overflow-hidden">
       {/* 聊天区域 */}
-      <div className="flex-1 overflow-auto px-8 py-8">
-        <div className="max-w-4xl mx-auto">
+      <div className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-4xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto">
           {/* 空状态提示 */}
           {conversationState.turns.length === 0 && (
             <div className="h-full flex items-center justify-center">
@@ -1086,7 +1086,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
 
       {/* 输入区域 */}
       <div className="bg-gray-50 rounded-b-xl">
-        <div className="max-w-3xl mx-auto p-6">
+        <div className="max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto p-4 sm:p-6">
           {/* Agent选择卡片头部 */}
           {selectedAgent && !selectedWorkflow && (
             <div className="mb-4 p-3 border border-blue-200 bg-blue-50 rounded-lg">
@@ -1269,11 +1269,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                   />
                   <Button 
                     type="text" 
-                  icon={<AudioOutlined />}
-                  className="text-gray-400 hover:text-gray-600"
-                  size="small"
-                  title="Voice input"
-                />
+                    icon={<AudioOutlined />}
+                    className="text-gray-400 hover:text-gray-600"
+                    size="small"
+                    title="Voice input"
+                  />
                 </div>
                 
                 <div className="flex-1">

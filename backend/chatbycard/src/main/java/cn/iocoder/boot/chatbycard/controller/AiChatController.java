@@ -4,6 +4,8 @@ import cn.iocoder.boot.chatbycard.dto.AiChatRequest;
 import cn.iocoder.boot.chatbycard.dto.AiChatResponse;
 import cn.iocoder.boot.chatbycard.dto.AgentTestRequest;
 import cn.iocoder.boot.chatbycard.dto.ApiResponse;
+import cn.iocoder.boot.chatbycard.dto.PromptOptimizeRequest;
+import cn.iocoder.boot.chatbycard.dto.PromptOptimizeResponse;
 import cn.iocoder.boot.chatbycard.service.AIChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -223,5 +225,35 @@ public class AiChatController {
                     log.error("Agent临时测试流式处理出错: {}", error.getMessage(), error);
                     return Flux.just("data: " + createErrorEventData("Agent临时测试流式处理失败：" + error.getMessage()) + "\n\n");
                 });
+    }
+
+    /**
+     * 提示词优化接口 - 转换为System Prompt格式
+     */
+    @PostMapping("/prompt/optimize")
+    public ApiResponse<PromptOptimizeResponse> optimizePrompt(@Valid @RequestBody PromptOptimizeRequest request) {
+        log.info("Received prompt optimization request, original prompt length: {}", 
+                request.getOriginalPrompt() != null ? request.getOriginalPrompt().length() : 0);
+        
+        try {
+            // 验证请求参数
+            if (request.getOriginalPrompt() == null || request.getOriginalPrompt().trim().isEmpty()) {
+                return ApiResponse.error(400, "Original prompt cannot be empty");
+            }
+            
+            PromptOptimizeResponse response = aiChatService.optimizePrompt(request);
+            
+            log.info("Prompt optimization completed successfully, optimized length: {}, processing time: {}ms", 
+                    response.getOptimizedCharacterCount(), 
+                    response.getProcessingTimeMs());
+            return ApiResponse.success(response, "Prompt optimization completed successfully");
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("Prompt optimization request parameter error: {}", e.getMessage());
+            return ApiResponse.error(400, "Request parameter error: " + e.getMessage());
+        } catch (Exception e) {
+            log.error("Prompt optimization failed: {}", e.getMessage(), e);
+            return ApiResponse.error(500, "Prompt optimization failed: " + e.getMessage());
+        }
     }
 } 

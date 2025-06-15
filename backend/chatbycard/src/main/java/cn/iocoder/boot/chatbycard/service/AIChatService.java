@@ -3,6 +3,8 @@ package cn.iocoder.boot.chatbycard.service;
 import cn.iocoder.boot.chatbycard.dto.AiChatRequest;
 import cn.iocoder.boot.chatbycard.dto.AiChatResponse;
 import cn.iocoder.boot.chatbycard.dto.AgentTestRequest;
+import cn.iocoder.boot.chatbycard.dto.PromptOptimizeRequest;
+import cn.iocoder.boot.chatbycard.dto.PromptOptimizeResponse;
 import reactor.core.publisher.Flux;
 
 /**
@@ -43,4 +45,12 @@ public interface AIChatService {
      * @return 流式响应
      */
     Flux<String> testAgentStream(AgentTestRequest request);
+
+    /**
+     * 优化提示词
+     *
+     * @param request 提示词优化请求
+     * @return 优化后的提示词响应
+     */
+    PromptOptimizeResponse optimizePrompt(PromptOptimizeRequest request);
 } 

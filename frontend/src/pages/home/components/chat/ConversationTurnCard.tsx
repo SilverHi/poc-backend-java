@@ -77,7 +77,7 @@ const ConversationTurnCard: React.FC<ConversationTurnCardProps> = ({
         {/* 对话回合标识 */}
         <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
           <div className="flex items-center space-x-2">
-            <Text className="text-sm text-gray-500">对话回合 #{turn.turnIndex + 1}</Text>
+            <Text className="text-sm text-gray-500">Turn #{turn.turnIndex + 1}</Text>
             <Text className="text-xs text-gray-400">
               {turn.timestamp.toLocaleString()}
             </Text>
@@ -92,7 +92,7 @@ const ConversationTurnCard: React.FC<ConversationTurnCardProps> = ({
             <div className="bg-gray-50 rounded-lg p-3 border-l-4 border-green-400">
               <div className="flex items-center mb-2">
                 <RobotOutlined className="text-green-600 mr-2" />
-                <Text className="text-sm font-medium text-gray-700">延续上次回复</Text>
+                <Text className="text-sm font-medium text-gray-700">Continue from last reply</Text>
               </div>
               <div className="text-sm text-gray-600">
                 <MarkdownRenderer content={userInput.previousAiOutput} />
@@ -105,7 +105,7 @@ const ConversationTurnCard: React.FC<ConversationTurnCardProps> = ({
             <div className="bg-blue-50 rounded-lg p-3 border-l-4 border-blue-400">
               <div className="flex items-center mb-2">
                 <UserOutlined className="text-blue-600 mr-2" />
-                <Text className="text-sm font-medium text-gray-700">用户输入</Text>
+                <Text className="text-sm font-medium text-gray-700">User Input</Text>
               </div>
               <div className="text-sm text-gray-800">
                 <MarkdownRenderer content={userInput.content} />
@@ -118,7 +118,7 @@ const ConversationTurnCard: React.FC<ConversationTurnCardProps> = ({
             <div className="bg-orange-50 rounded-lg p-3 border-l-4 border-orange-400">
               <div className="flex items-center mb-2">
                 <FileTextOutlined className="text-orange-600 mr-2" />
-                <Text className="text-sm font-medium text-gray-700">引用文档</Text>
+                <Text className="text-sm font-medium text-gray-700">Referenced Documents</Text>
               </div>
               <Space wrap>
                 {userInput.referencedDocuments.map((doc) => (
@@ -141,7 +141,7 @@ const ConversationTurnCard: React.FC<ConversationTurnCardProps> = ({
             <div className="bg-purple-50 rounded-lg p-3 border-l-4 border-purple-400">
               <div className="flex items-center mb-2">
                 <ToolOutlined className="text-purple-600 mr-2" />
-                <Text className="text-sm font-medium text-gray-700">使用的Agent</Text>
+                <Text className="text-sm font-medium text-gray-700">Agent Used</Text>
               </div>
               <div className="flex items-center space-x-2">
                 <Tag color="purple">
@@ -165,14 +165,14 @@ const ConversationTurnCard: React.FC<ConversationTurnCardProps> = ({
                 <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                 <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
               </div>
-              <Text className="text-sm">AI正在思考...</Text>
+              <Text className="text-sm">AI is thinking...</Text>
             </div>
           ) : (
             <div className="bg-green-50 rounded-lg p-3 border-l-4 border-green-400 relative group">
               <div className="flex items-center mb-2 justify-between">
                 <div className="flex items-center">
                   <RobotOutlined className="text-green-600 mr-2" />
-                  <Text className="text-sm font-medium text-gray-700">AI回复</Text>
+                  <Text className="text-sm font-medium text-gray-700">AI Response</Text>
                   {aiResponse.timestamp && (
                     <Text className="text-xs text-gray-400 ml-2">
                       {aiResponse.timestamp.toLocaleTimeString()}
@@ -188,7 +188,7 @@ const ConversationTurnCard: React.FC<ConversationTurnCardProps> = ({
                       icon={<EditOutlined />}
                       onClick={handleStartEdit}
                       className="text-gray-600 hover:text-blue-600"
-                      title="编辑AI回复"
+                      title="Edit AI Response"
                     />
                   )}
                   
@@ -201,7 +201,7 @@ const ConversationTurnCard: React.FC<ConversationTurnCardProps> = ({
                         icon={<SaveOutlined />}
                         onClick={handleSaveEdit}
                         className="text-green-600 hover:text-green-700"
-                        title="保存编辑"
+                        title="Save Edit"
                       />
                       <Button
                         type="text"
@@ -209,7 +209,7 @@ const ConversationTurnCard: React.FC<ConversationTurnCardProps> = ({
                         icon={<CloseOutlined />}
                         onClick={handleCancelEdit}
                         className="text-gray-600 hover:text-red-600"
-                        title="取消编辑"
+                        title="Cancel Edit"
                       />
                     </div>
                   )}
@@ -219,7 +219,7 @@ const ConversationTurnCard: React.FC<ConversationTurnCardProps> = ({
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <CopyButton 
                         text={aiResponse.content || ''}
-                        tooltip="复制AI回复"
+                        tooltip="Copy AI Response"
                         className="bg-white hover:bg-gray-50 border border-gray-300 shadow-sm"
                       />
                     </div>
@@ -244,7 +244,7 @@ const ConversationTurnCard: React.FC<ConversationTurnCardProps> = ({
               {/* 状态指示 */}
               {aiResponse.status === 'error' && (
                 <div className="mt-2 text-red-600 text-xs">
-                  回复生成失败
+                  Failed to generate response
                 </div>
               )}
             </div>

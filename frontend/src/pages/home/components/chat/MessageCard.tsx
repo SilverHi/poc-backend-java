@@ -88,8 +88,8 @@ const MessageCard: React.FC<MessageCardProps> = ({
       }
       setIsEditing(false);
     } catch (error) {
-      console.error('保存失败:', error);
-      message.error('保存失败');
+      console.error('Save failed:', error);
+      message.error('Save failed');
     } finally {
       setSaving(false);
     }
@@ -267,11 +267,11 @@ const MessageCard: React.FC<MessageCardProps> = ({
                   <div className="flex items-center mb-2 justify-between">
                     <div className="flex items-center">
                       <RobotOutlined className="text-green-600 mr-2" />
-                      <Text className="text-sm font-medium text-gray-700">AI回复</Text>
+                      <Text className="text-sm font-medium text-gray-700">AI Response</Text>
                     </div>
                     <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <EditButton
-                        tooltip="编辑回复"
+                        tooltip="Edit reply"
                         isEditable={isEditable}
                         isEditing={isEditing}
                         saving={saving}
@@ -281,7 +281,7 @@ const MessageCard: React.FC<MessageCardProps> = ({
                       />
                       <CopyButton 
                         text={isEditing ? editText : (aiResponse || '')}
-                        tooltip={(isEditing ? editText : (aiResponse || '')).trim() === '' ? "复制空回复" : "复制AI回复"}
+                        tooltip={(isEditing ? editText : (aiResponse || '')).trim() === '' ? "Copy empty reply" : "Copy AI reply"}
                         className="bg-white hover:bg-gray-50 border border-gray-300 shadow-sm"
                       />
                     </div>
@@ -296,7 +296,7 @@ const MessageCard: React.FC<MessageCardProps> = ({
                         onBlur={handleCancel}
                         autoSize={{ minRows: 4, maxRows: 12 }}
                         className="border-gray-300 focus:border-blue-500 focus:shadow-sm"
-                        placeholder="编辑AI回复内容..."
+                        placeholder="Edit AI reply content..."
                         autoFocus
                       />
                     </div>
