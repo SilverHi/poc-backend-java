@@ -7,7 +7,7 @@ import StepCard from './StepCard';
 import { StepManager, ProcessStep } from './stepsConfig';
 import { ConversationTurn, ConversationManager, ConversationState, ReferencedDocument, SelectedAgent, Workflow, WorkflowState, InputAreaState } from './types';
 
-import { getDocumentsContent, incrementAgentCallCount, aiChat } from '../../../../api';
+import { getDocumentsContent, incrementAgentCallCount, aiChat, getApiConfig } from '../../../../api';
 import type { AiChatRequest } from '../../../../api';
 
 const { TextArea } = Input;
@@ -652,7 +652,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
           
           // 获取完整的Agent信息
           try {
-            const response = await fetch(`http://localhost:8080/api/chatbycard/agents/${turn.userInput.selectedAgent.id}`);
+            const response = await fetch(`${getApiConfig().BASE_URL}/api/chatbycard/agents/${turn.userInput.selectedAgent.id}`);
             if (response.ok) {
               const result = await response.json();
               if (result.success && result.data && result.data.data) {
@@ -988,8 +988,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   return (
     <div className="h-full flex flex-col rounded-xl overflow-hidden">
       {/* 聊天区域 */}
-      <div className="flex-1 overflow-auto px-8 py-8">
-        <div className="max-w-4xl mx-auto">
+      <div className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-8">
+        <div className="w-full max-w-none mx-auto">
           {/* 空状态提示 */}
           {conversationState.turns.length === 0 && (
             <div className="h-full flex items-center justify-center">
@@ -1086,7 +1086,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
 
       {/* 输入区域 */}
       <div className="bg-gray-50 rounded-b-xl">
-        <div className="max-w-3xl mx-auto p-6">
+        <div className="w-full max-w-none mx-auto p-4 sm:p-6 xl:px-12 2xl:px-16">
           {/* Agent选择卡片头部 */}
           {selectedAgent && !selectedWorkflow && (
             <div className="mb-4 p-3 border border-blue-200 bg-blue-50 rounded-lg">
@@ -1269,11 +1269,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                   />
                   <Button 
                     type="text" 
-                  icon={<AudioOutlined />}
-                  className="text-gray-400 hover:text-gray-600"
-                  size="small"
-                  title="Voice input"
-                />
+                    icon={<AudioOutlined />}
+                    className="text-gray-400 hover:text-gray-600"
+                    size="small"
+                    title="Voice input"
+                  />
                 </div>
                 
                 <div className="flex-1">

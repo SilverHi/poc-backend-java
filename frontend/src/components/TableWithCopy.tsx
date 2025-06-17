@@ -10,7 +10,7 @@ const TableWithCopy: React.FC<TableWithCopyProps> = ({ children, ...props }) => 
   const tableRef = useRef<HTMLTableElement>(null);
 
   return (
-    <div className="table-container overflow-x-auto my-4 relative group">
+    <div className="table-container overflow-x-auto my-4 relative group border border-gray-300 rounded-lg">
       <div className="absolute right-2 top-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
         <CopyButton 
           tooltip="复制表格数据"
@@ -35,7 +35,10 @@ const TableWithCopy: React.FC<TableWithCopyProps> = ({ children, ...props }) => 
       </div>
       <table 
         ref={tableRef}
-        className="min-w-full border-collapse border-2 border-gray-400 bg-white shadow-sm"
+        className="w-max min-w-full border-collapse bg-white"
+        style={{
+          tableLayout: 'fixed'
+        }}
         {...props}
       >
         {children}

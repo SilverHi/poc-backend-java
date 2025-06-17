@@ -4,6 +4,8 @@ import cn.iocoder.boot.chatbycard.dto.AgentDTO;
 import cn.iocoder.boot.chatbycard.dto.AiChatRequest;
 import cn.iocoder.boot.chatbycard.dto.AiChatResponse;
 import cn.iocoder.boot.chatbycard.dto.AgentTestRequest;
+import cn.iocoder.boot.chatbycard.dto.PromptOptimizeRequest;
+import cn.iocoder.boot.chatbycard.dto.PromptOptimizeResponse;
 import cn.iocoder.boot.chatbycard.service.AIChatService;
 import cn.iocoder.boot.chatbycard.service.AgentService;
 import cn.iocoder.boot.chatbycard.service.DocumentService;
@@ -19,6 +21,12 @@ import reactor.core.publisher.Flux;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.core.io.ClassPathResource;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -45,6 +53,9 @@ public class AIChatServiceImpl implements AIChatService {
     private static final String DEFAULT_MODEL = "gpt-4o-mini";
     private static final BigDecimal DEFAULT_TEMPERATURE = BigDecimal.valueOf(0.7);
     private static final Integer DEFAULT_MAX_TOKENS = 2048;
+    
+    // 提示词文件路径
+    private static final String OPTIMIZATION_PROMPT_FILE = "prompts/system-prompt-optimization.txt";
 
     @Override
     public AiChatResponse chat(AiChatRequest request) {
@@ -449,6 +460,108 @@ public class AIChatServiceImpl implements AIChatService {
             return Flux.error(new RuntimeException("Agent临时测试流式处理初始化失败: " + e.getMessage()));
         }
     }
+
+    @Override
+    public PromptOptimizeResponse optimizePrompt(PromptOptimizeRequest request) {
+        log.info("Starting prompt optimization request, original prompt length: {}", 
+                request.getOriginalPrompt().length());
+
+        long startTime = System.currentTimeMillis();
+        
+        try {
+            // 1. Load system prompt from file
+            String optimizationSystemPrompt = loadOptimizationPromptFromFile();
+            
+            // 2. Use original prompt as user input directly
+            String userInput = request.getOriginalPrompt();
+            
+            // 3. Build full prompt
+            String fullPrompt = buildFullPrompt(optimizationSystemPrompt, userInput);
+            
+            // 4. Configure OpenAI options using GPT-4o-mini model
+            OpenAiChatOptions chatOptions = OpenAiChatOptions.builder()
+                    .model("gpt-4o-mini")  // Use GPT-4o-mini
+                    .temperature(0.3)  // Lower temperature for consistent results
+                    .maxTokens(4096)  // Sufficient space for optimized prompt
+                    .build();
+            
+            // 5. Create prompt and call AI
+            Prompt prompt = new Prompt(fullPrompt, chatOptions);
+            log.info("Calling GPT-4o-mini for prompt optimization using system prompt from file");
+            log.debug("Loaded system prompt length: {}", optimizationSystemPrompt.length());
+            log.debug("Full optimization input: {}", fullPrompt);
+            
+            ChatResponse response = chatModel.call(prompt);
+            String optimizedPrompt = response.getResults().get(0).getOutput().getText().trim();
+            
+            long processingTime = System.currentTimeMillis() - startTime;
+            
+            // 6. Build response object - use optimized prompt directly
+            PromptOptimizeResponse responseObj = PromptOptimizeResponse.builder()
+                    .optimizedPrompt(optimizedPrompt)
+                    .originalCharacterCount(request.getOriginalPrompt().length())
+                    .optimizedCharacterCount(optimizedPrompt.length())
+                    .processingTimeMs(processingTime)
+                    .modelUsed("gpt-4o-mini")
+                    .build();
+            
+            log.info("Prompt optimization completed successfully, original length: {}, optimized length: {}, processing time: {}ms", 
+                    responseObj.getOriginalCharacterCount(), 
+                    responseObj.getOptimizedCharacterCount(),
+                    processingTime);
+            
+            return responseObj;
+            
+                } catch (Exception e) {
+            log.error("Prompt optimization failed: {}", e.getMessage(), e);
+            // 检查是否是因为文件读取失败导致的
+            if (e.getMessage().contains("Failed to load") || e.getMessage().contains("file")) {
+                throw new RuntimeException("Prompt optimization failed: Unable to load system prompt from file - " + e.getMessage());
+            }
+            throw new RuntimeException("Prompt optimization failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 从文件中加载优化提示词
+     * 
+     * @return 优化提示词内容
+     */
+    private String loadOptimizationPromptFromFile() {
+        try {
+            // 尝试从classpath加载文件
+            ClassPathResource resource = new ClassPathResource(OPTIMIZATION_PROMPT_FILE);
+            if (resource.exists()) {
+                byte[] bytes = Files.readAllBytes(Paths.get(resource.getURI()));
+                String promptContent = new String(bytes, StandardCharsets.UTF_8).trim();
+                
+                if (StringUtils.hasText(promptContent)) {
+                    log.debug("Successfully loaded optimization prompt from file: {}", OPTIMIZATION_PROMPT_FILE);
+                    return promptContent;
+                }
+            }
+            
+            log.warn("Optimization prompt file not found or empty: {}", OPTIMIZATION_PROMPT_FILE);
+            // 返回默认的提示词作为备用
+            return getDefaultOptimizationPrompt();
+            
+        } catch (IOException e) {
+            log.error("Failed to load optimization prompt from file: {}, error: {}", OPTIMIZATION_PROMPT_FILE, e.getMessage());
+            // 发生异常时返回默认提示词
+            return getDefaultOptimizationPrompt();
+        }
+    }
+
+    /**
+     * 获取默认的优化提示词（备用方案）
+     * 
+     * @return 默认的优化提示词
+     */
+    private String getDefaultOptimizationPrompt() {
+        return "请将用户输入的内容，转换为System Prompt的格式及写法。请直接输出转换后的内容，不要添加无关内容。";
+    }
+
+ 
 
     /**
      * Agent配置类

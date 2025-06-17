@@ -712,6 +712,21 @@ export interface AiChatResponse {
   characterCount: number;
 }
 
+// 提示词优化相关接口
+export interface PromptOptimizeRequest {
+  originalPrompt: string;
+  optimizationGoal?: string;
+  preferredStyle?: string;
+}
+
+export interface PromptOptimizeResponse {
+  optimizedPrompt: string;
+  originalCharacterCount: number;
+  optimizedCharacterCount: number;
+  processingTimeMs: number;
+  modelUsed: string;
+}
+
 /**
  * 调用AI聊天接口
  */
@@ -832,6 +847,44 @@ export const aiChatStream = async (
     }
   } catch (error) {
     onError(error instanceof Error ? error.message : 'AI流式聊天请求失败');
+  }
+};
+
+/**
+ * 优化提示词接口 - 转换为System Prompt格式
+ */
+export const optimizePrompt = async (request: PromptOptimizeRequest): Promise<ApiResponse<PromptOptimizeResponse>> => {
+  try {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/chatbycard/prompt/optimize`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    
+    if (result.success && result.data) {
+      return {
+        success: true,
+        data: result.data,
+      };
+    } else {
+      return {
+        success: false,
+        error: result.message || 'Failed to optimize prompt',
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Prompt optimization request failed',
+    };
   }
 };
 
