@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Layout } from 'antd';
+import { Layout, Button } from 'antd';
+import { MenuUnfoldOutlined, MenuFoldOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { Navigation } from '../../components/common';
 import { ResourcePanel } from './components/resource';
 import { ChatArea } from './components/chat';
@@ -21,6 +22,10 @@ const Home: React.FC = () => {
   const [referencedDocuments, setReferencedDocuments] = useState<ReferencedDocument[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<SelectedAgent | null>(null);
   const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
+
+  // 抽屉状态管理
+  const [leftPanelVisible, setLeftPanelVisible] = useState(true);
+  const [rightPanelVisible, setRightPanelVisible] = useState(true);
 
   // 清空对话
   const handleClearConversation = () => {
@@ -109,17 +114,46 @@ const Home: React.FC = () => {
       <Navigation onClearConversation={handleClearConversation} />
       
       {/* 主要内容区域 */}
-      <Content className="flex h-[calc(100vh-64px)] overflow-hidden gap-6 p-6">
-        {/* 左侧资源选择区 */}
-        <div className="w-80 flex-shrink-0 h-full bg-white rounded-xl shadow-sm border border-gray-200">
-          <ResourcePanel 
-            onDocumentSelect={handleAddDocument}
-            onExternalSystemSelect={handleAddExternalSystem}
+      <Content className="flex h-[calc(100vh-64px)] overflow-hidden gap-6 p-6 relative">
+        {/* 左侧区域包装器 */}
+        <div className="relative flex">
+          {/* 左侧资源选择区 */}
+          <div 
+            className={`transition-all duration-300 ease-in-out h-full bg-white rounded-xl shadow-sm border border-gray-200 ${
+              leftPanelVisible ? 'w-80 flex-shrink-0' : 'w-0 overflow-hidden'
+            }`}
+          >
+            {leftPanelVisible && (
+              <ResourcePanel 
+                onDocumentSelect={handleAddDocument}
+                onExternalSystemSelect={handleAddExternalSystem}
+              />
+            )}
+          </div>
+          {/* 左侧抽屉按钮 - 跟随左面板 */}
+          <Button
+            type="text"
+            icon={leftPanelVisible ? <LeftOutlined /> : <RightOutlined />}
+            onClick={() => setLeftPanelVisible(!leftPanelVisible)}
+            className={`absolute top-1/2 transform -translate-y-1/2 z-20 bg-white shadow-md border border-gray-200 hover:bg-gray-50 transition-all duration-300 ${
+              leftPanelVisible ? '-right-4' : 'left-2'
+            }`}
+            style={{ width: '32px', height: '32px' }}
+            title={leftPanelVisible ? "隐藏资源面板" : "显示资源面板"}
           />
         </div>
         
         {/* 中间对话区 */}
-        <div className="flex-1 h-full min-w-0 bg-white rounded-xl shadow-sm border border-gray-200">
+        <div 
+          className={`transition-all duration-300 ease-in-out h-full min-w-0 bg-white rounded-xl shadow-sm border border-gray-200 ${
+            leftPanelVisible && rightPanelVisible ? 'flex-1' : 
+            leftPanelVisible || rightPanelVisible ? 'flex-1' : 'flex-1'
+          }`}
+          style={{
+            marginLeft: leftPanelVisible ? '0' : '-24px',
+            marginRight: rightPanelVisible ? '0' : '-24px'
+          }}
+        >
           <ChatArea 
             referencedDocuments={referencedDocuments}
             selectedAgent={selectedAgent}
@@ -132,12 +166,32 @@ const Home: React.FC = () => {
           />
         </div>
         
-        {/* 右侧Agents选择区 */}
-        <div className="w-80 flex-shrink-0 h-full bg-white rounded-xl shadow-sm border border-gray-200">
-          <AgentsPanel 
-            onAgentSelect={handleSelectAgent}
-            onWorkflowSelect={handleSelectWorkflow}
+        {/* 右侧区域包装器 */}
+        <div className="relative flex">
+          {/* 右侧抽屉按钮 - 跟随右面板 */}
+          <Button
+            type="text"
+            icon={rightPanelVisible ? <RightOutlined /> : <LeftOutlined />}
+            onClick={() => setRightPanelVisible(!rightPanelVisible)}
+            className={`absolute top-1/2 transform -translate-y-1/2 z-20 bg-white shadow-md border border-gray-200 hover:bg-gray-50 transition-all duration-300 ${
+              rightPanelVisible ? '-left-4' : '-right-2'
+            }`}
+            style={{ width: '32px', height: '32px' }}
+            title={rightPanelVisible ? "隐藏智能体面板" : "显示智能体面板"}
           />
+          {/* 右侧Agents选择区 */}
+          <div 
+            className={`transition-all duration-300 ease-in-out h-full bg-white rounded-xl shadow-sm border border-gray-200 ${
+              rightPanelVisible ? 'w-80 flex-shrink-0' : 'w-0 overflow-hidden'
+            }`}
+          >
+            {rightPanelVisible && (
+              <AgentsPanel 
+                onAgentSelect={handleSelectAgent}
+                onWorkflowSelect={handleSelectWorkflow}
+              />
+            )}
+          </div>
         </div>
       </Content>
     </Layout>

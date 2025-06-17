@@ -139,12 +139,46 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
         .markdown-content .table-container {
           margin: 1rem 0;
           overflow: hidden;
+          max-width: 100%;
+        }
+        .markdown-content .table-container::-webkit-scrollbar {
+          height: 8px;
+        }
+        .markdown-content .table-container::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 4px;
+        }
+        .markdown-content .table-container::-webkit-scrollbar-thumb {
+          background: #c1c1c1;
+          border-radius: 4px;
+        }
+        .markdown-content .table-container::-webkit-scrollbar-thumb:hover {
+          background: #a8a8a8;
         }
         .markdown-content th {
           font-weight: 600;
+          max-width: 200px;
+          min-width: 80px;
+          word-wrap: break-word;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         .markdown-content td {
           font-size: 14px;
+          max-width: 200px;
+          min-width: 80px;
+          word-wrap: break-word;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          position: relative;
+        }
+        .markdown-content td:hover {
+          white-space: normal;
+          overflow: visible;
+          background-color: #f9f9f9;
+          z-index: 1;
         }
         .markdown-content hr {
           margin: 1.5rem 0;
@@ -260,12 +294,12 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
             </tr>
           ),
           th: ({ children }) => (
-            <th className="border border-gray-400 px-4 py-3 text-left font-semibold text-gray-900 bg-gray-100">
+            <th className="border border-gray-400 px-4 py-3 text-left font-semibold text-gray-900 bg-gray-100" title={typeof children === 'string' ? children : String(children)}>
               {children}
             </th>
           ),
           td: ({ children }) => (
-            <td className="border border-gray-300 px-4 py-3 text-gray-800">
+            <td className="border border-gray-300 px-4 py-3 text-gray-800" title={typeof children === 'string' ? children : String(children)}>
               {children}
             </td>
           ),
