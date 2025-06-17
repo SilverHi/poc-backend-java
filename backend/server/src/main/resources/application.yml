@@ -4,13 +4,17 @@ server:
 spring:
   application:
     name: backend-server
+  profiles:
+    active: dev
+  main:
+    allow-bean-definition-overriding: true
   
   # 数据源配置
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://8.138.90.155:5432/ai
-    username: ai
-    password: ai
+    url: jdbc:postgresql://localhost:5432/chatbycard
+    username: postgres
+    password: postgres
   
   # 文件上传配置
   servlet:
@@ -29,22 +33,23 @@ spring:
         logic-delete-field: deleted  # 逻辑删除字段名
         logic-delete-value: 1  # 逻辑已删除值
         logic-not-delete-value: 0  # 逻辑未删除值
-    
+  
   # Spring AI配置
   ai:
     openai:
-      api-key: ${OPENAI_API_KEY:your-api-key-here}
+      api-key: ${OPENAI_API_KEY:your-api-key}
       base-url: ${OPENAI_BASE_URL:https://api.openai.com}
       chat:
         options:
-          model: gpt-4o-mini
+          model: gpt-3.5-turbo
           temperature: 0.7
 
 # 日志配置
 logging:
   level:
-    cn.iocoder.boot: debug
-    org.springframework: info
+    cn.iocoder.boot: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.ai: DEBUG
   pattern:
     console: '%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'
 
@@ -58,9 +63,14 @@ management:
     health:
       show-details: when-authorized
 
-# 外部API配置
+# 外部API配置 (已合并，保留内部服务配置)
 external:
-  api:
-    workflow:
-      url: http://localhost:8000/api/workflows/?skip=0&limit=100
-      frontend-url: http://localhost:3001 
+  chatbycard:
+    url: http://localhost:8080
+
+# 跨域配置
+cors:
+  allowed-origins: 
+    - http://localhost:3000
+    - http://localhost:3001
+    - http://0.0.0.0:3001 

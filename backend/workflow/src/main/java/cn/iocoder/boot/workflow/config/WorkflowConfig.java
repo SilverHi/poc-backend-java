@@ -1,4 +1,4 @@
-package cn.iocoder.boot.chatbycard.config;
+package cn.iocoder.boot.workflow.config;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -7,23 +7,25 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Duration;
 
 /**
- * HTTP客户端配置类
+ * 工作流配置类
  *
- * @author backend-team
+ * @author workflow-team
  */
 @Slf4j
 @Configuration
-public class HttpClientConfig {
+@EnableJpaAuditing
+public class WorkflowConfig {
 
     /**
      * 配置RestTemplate
      */
-    @Bean
+    @Bean("workflowRestTemplate")
     public RestTemplate restTemplate(RestTemplateBuilder builder) {
         return builder
                 .setConnectTimeout(Duration.ofSeconds(10))
@@ -33,7 +35,6 @@ public class HttpClientConfig {
 
     /**
      * 配置ObjectMapper
-     * 添加忽略未知属性配置以解决Spring AI 1.0.0-M6版本中OpenAI annotations字段问题
      */
     @Bean
     public ObjectMapper objectMapper() {
@@ -41,11 +42,10 @@ public class HttpClientConfig {
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         
-        // 解决Spring AI 1.0.0-M6版本中OpenAI annotations字段问题
         // 忽略未知属性，避免反序列化错误
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         
-        log.info("ObjectMapper配置完成，已启用忽略未知属性以解决Spring AI兼容性问题");
+        log.info("ObjectMapper配置完成");
         
         return mapper;
     }

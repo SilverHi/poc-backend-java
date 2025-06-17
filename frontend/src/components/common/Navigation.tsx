@@ -1,6 +1,6 @@
 import React from 'react';
 import { Layout, Typography, Avatar, Button } from 'antd';
-import { MessageOutlined, SettingOutlined, UserOutlined, DeleteOutlined } from '@ant-design/icons';
+import { MessageOutlined, SettingOutlined, UserOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 
 const { Header } = Layout;
 const { Text } = Typography;
@@ -10,6 +10,10 @@ interface NavigationProps {
 }
 
 const Navigation: React.FC<NavigationProps> = ({ onClearConversation }) => {
+  const handleEditWorkflow = () => {
+    window.open('/workflow', '_blank');
+  };
+
   return (
     <Header className="bg-white border-b border-gray-200 px-6 h-16 flex items-center justify-between shadow-sm">
       <div className="flex items-center space-x-4">
@@ -22,6 +26,17 @@ const Navigation: React.FC<NavigationProps> = ({ onClearConversation }) => {
       </div>
       
       <div className="flex items-center space-x-4">
+        <div className="hidden md:block">
+          <Button 
+            type="text" 
+            onClick={handleEditWorkflow} 
+            icon={<EditOutlined />}
+            className="flex items-center space-x-2 px-4 py-2 rounded-lg text-blue-600 hover:text-blue-800 hover:bg-blue-50 border-0 transition-all duration-200 font-medium"
+            size="middle"
+          >
+            <span>Edit Workflow</span>
+          </Button>
+        </div>
         <div className="hidden md:block">
           <Button 
             type="text" 

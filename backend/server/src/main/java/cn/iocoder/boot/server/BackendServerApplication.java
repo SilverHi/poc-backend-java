@@ -3,6 +3,8 @@ package cn.iocoder.boot.server;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 /**
  * 后端服务主启动类
@@ -19,6 +21,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
     "cn.iocoder.boot.workflow.mapper",
     "cn.iocoder.boot.chatbycard.mapper"
 })
+@EntityScan(basePackages = "cn.iocoder.boot.workflow.entity")
+@EnableJpaRepositories(basePackages = "cn.iocoder.boot.workflow.repository")
 public class BackendServerApplication {
 
     public static void main(String[] args) {

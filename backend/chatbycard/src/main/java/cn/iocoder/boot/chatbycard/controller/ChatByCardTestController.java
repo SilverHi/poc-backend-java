@@ -17,7 +17,7 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping("/api/chatbycard/test")
-public class TestController {
+public class ChatByCardTestController {
 
     @GetMapping("/status")
     public Map<String, Object> getStatus() {

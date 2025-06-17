@@ -61,6 +61,13 @@
             <artifactId>spring-ai-openai-spring-boot-starter</artifactId>
         </dependency>
         
+        <!-- Workflow模块依赖 -->
+        <dependency>
+            <groupId>cn.iocoder.boot</groupId>
+            <artifactId>workflow</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        
         <!-- 工具类 -->
         <dependency>
             <groupId>org.projectlombok</groupId>
