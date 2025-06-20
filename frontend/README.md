@@ -7,7 +7,6 @@
 - React 18
 - Ant Design 5
 - Axios
-- React Scripts
 
 ## 安装依赖
 
