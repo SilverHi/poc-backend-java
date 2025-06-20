@@ -42,9 +42,20 @@ frontend/
 ├── public/
 │   └── index.html
 ├── src/
-│   ├── App.js          # 主应用组件
-│   ├── index.js        # 应用入口
-│   └── index.css       # 基础样式
-├── package.json        # 项目配置
-└── README.md          # 项目说明
+│   ├── api/         # API 请求封装
+│   ├── assets/      # 静态资源（图片、SVG等）
+│   ├── components/  # 通用组件
+│   ├── constants/   # 全局常量
+│   ├── hooks/       # 自定义 React hooks
+│   ├── layouts/     # 通用布局组件
+│   ├── pages/       # 页面组件
+│   ├── store/       # 全局状态管理
+│   ├── styles/      # 样式文件
+│   ├── types/       # 类型定义（TypeScript接口等）
+│   ├── utils/       # 工具函数
+│   ├── App.tsx      # 主应用组件
+│   ├── main.tsx     # 应用入口
+│   └── index.css    # 基础样式
+├── package.json     # 项目配置
+└── README.md        # 项目说明
 ``` 
