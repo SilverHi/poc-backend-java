@@ -1,11 +1,11 @@
 // 环境变量配置
 export const config = {
   // API基础URL
-  apiBaseUrl: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080',
-  
+  apiBaseUrl: (import.meta as any).env.REACT_APP_API_BASE_URL || 'http://localhost:8080',
+
   // 外部Agent服务URL  
-  externalAgentUrl: process.env.REACT_APP_EXTERNAL_AGENT_URL || 'http://localhost:8080',
-  
+  externalAgentUrl: (import.meta as any).env.REACT_APP_EXTERNAL_AGENT_URL || 'http://localhost:8080',
+
   // 完整的API URL
   get apiUrl() {
     return `${this.apiBaseUrl}/api`;
@@ -17,10 +17,10 @@ export const config = {
   },
   
   // 开发模式检测
-  isDevelopment: process.env.NODE_ENV === 'development',
+  isDevelopment: (import.meta as any).env.NODE_ENV === 'development',
   
   // 生产模式检测
-  isProduction: process.env.NODE_ENV === 'production'
+  isProduction: (import.meta as any).env.NODE_ENV === 'production'
 };
 
 export default config; 

@@ -16,13 +16,13 @@ cd frontend
 npm install
 ```
 
-## 启动开发服务器
+## 使用 Vite 启动开发服务器
 
 ```bash
-npm start
+npm run dev
 ```
 
-项目将在 http://localhost:3000 启动
+默认端口为 3000，可通过 `vite.config.ts` 修改。
 
 ## 功能特性
 
