@@ -5,7 +5,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import CopyButton from './CopyButton';
 import TableWithCopy from './TableWithCopy';
 
-const oneDark = require('react-syntax-highlighter/dist/styles/atom-one-dark');
+import oneDark from 'react-syntax-highlighter/dist/esm/styles/prism/one-dark';
 
 interface MarkdownRendererProps {
   content: string;
