@@ -5,7 +5,7 @@ import WorkflowApp from './pages/workflow/App';
 
 function App(): React.JSX.Element {
   return (
-    <Router>
+    <Router basename="/ui">
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/agent-create" element={<AgentCreate />} />

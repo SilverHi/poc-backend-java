@@ -7,6 +7,7 @@ export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   
   return {
+    base: '/ui', // 部署到子目录时设置基础路径
     plugins: [react()],
     
     // 路径别名配置
